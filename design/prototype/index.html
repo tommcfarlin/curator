@@ -4,20 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Curator</title>
+<script>try{var m=localStorage.getItem('curator-theme');if(m==='light'||m==='dark')document.documentElement.dataset.theme=m}catch(e){}</script>
 <style>
-:root{--bg:#000;--surface:#1c1c1e;--surface2:#2c2c2e;--line:#38383a;--text:#fff;--muted:#8e8e93;--accent:#0a84ff;--accent-ink:#fff;--ok:#30d158;--warn:#ff9f0a;--bad:#ff453a;--bar:rgba(28,28,30,.72);--r:12px}
-@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f2f2f7;--surface:#fff;--surface2:#e9e9ee;--line:#d1d1d6;--text:#000;--muted:#6c6c70;--accent:#007aff;--ok:#248a3d;--warn:#c93400;--bad:#d70015;--bar:rgba(249,249,249,.78)}}
+:root{--bg:#000;--surface:#1c1c1e;--surface2:#2c2c2e;--line:#38383a;--text:#fff;--muted:#8e8e93;--accent:#0a84ff;--accent-ink:#fff;--ok:#30d158;--warn:#ff9f0a;--bad:#ff453a;--bar:rgba(28,28,30,.72);--r:12px;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme]){--bg:#f2f2f7;--surface:#fff;--surface2:#e9e9ee;--line:#d1d1d6;--text:#000;--muted:#6c6c70;--accent:#007aff;--ok:#248a3d;--warn:#c93400;--bad:#d70015;--bar:rgba(249,249,249,.78);color-scheme:light}}
+:root[data-theme=light]{--bg:#f2f2f7;--surface:#fff;--surface2:#e9e9ee;--line:#d1d1d6;--text:#000;--muted:#6c6c70;--accent:#007aff;--ok:#248a3d;--warn:#c93400;--bad:#d70015;--bar:rgba(249,249,249,.78);color-scheme:light}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',system-ui,sans-serif}
+button,input{font-family:inherit}
+.seg.three{grid-template-columns:repeat(3,1fr)}
 body{min-height:100dvh;padding:0 16px calc(84px + env(safe-area-inset-bottom))}
 .wrap{max-width:640px;margin:0 auto}
 header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 10px;position:sticky;top:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);margin:0 -16px;padding-left:16px;padding-right:16px;z-index:5}
-h1{font:700 28px/1.1 -apple-system,system-ui,sans-serif;margin:0;letter-spacing:-.4px}
+h1{font:700 28px/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",system-ui,sans-serif;margin:0;letter-spacing:-.4px}
 .pill{display:flex;gap:8px;align-items:center;border:0;background:var(--surface);color:var(--text);border-radius:999px;padding:8px 12px;font-size:13px;min-height:40px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
 .off .dot{background:var(--bad)}
 h2{font-size:13px;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.02em}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:var(--r);border:0;background:var(--surface);color:var(--text);font:600 16px inherit;cursor:pointer}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:var(--r);border:0;background:var(--surface);color:var(--text);font-weight:600;font-size:16px;cursor:pointer}
 .btn.primary{background:var(--accent);color:var(--accent-ink)}.btn:not(.primary):not(.danger){color:var(--accent)}
 .btn.danger{color:var(--bad)}
 .btn[disabled]{opacity:.45}
@@ -25,7 +29,7 @@ h2{font-size:13px;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-
 .drop strong{display:block;color:var(--text);font-size:18px;margin-bottom:4px}
 .drop .btn{margin-top:16px}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:12px;padding:4px;gap:4px}
-.seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:600 15px inherit;cursor:pointer}
+.seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:600;font-size:15px;cursor:pointer}
 .seg button[aria-pressed=true]{background:var(--bg);color:var(--text);box-shadow:0 1px 3px #0003}
 :root:not([data-theme=dark]) .seg button[aria-pressed=true]{}
 .card{background:var(--surface);border:0;border-radius:var(--r);overflow:hidden;margin:12px 0}
@@ -47,7 +51,7 @@ h2{font-size:13px;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-
 .row .art{width:72px;aspect-ratio:16/9;border-radius:6px;flex:none}
 .row .t{flex:1;min-width:0}.row .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}.row .t span{font-size:13px;color:var(--muted)}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:9}
-nav button{flex:1;min-height:64px;border:0;background:none;color:var(--muted);font:600 12px inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+nav button{flex:1;min-height:64px;border:0;background:none;color:var(--muted);font-weight:600;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 nav button[aria-current=page]{color:var(--accent)}
 nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .sheet{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;z-index:20}
@@ -97,6 +101,15 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
   <h2>Activity</h2>
   <div id="jobs"></div>
 </section>
+<section id="settings" hidden>
+  <h2>Appearance</h2>
+  <div class="seg three" role="group" aria-label="Appearance" id="theme">
+    <button data-theme-pick="system" aria-pressed="true">System</button>
+    <button data-theme-pick="light" aria-pressed="false">Light</button>
+    <button data-theme-pick="dark" aria-pressed="false">Dark</button>
+  </div>
+  <p class="note">System follows your phone's light or dark setting.</p>
+</section>
 </main>
 </div>
 
@@ -113,6 +126,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
   <button data-tab="add" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</button>
   <button data-tab="library"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>On the TV</button>
   <button data-tab="queue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Activity<span id="qn"></span></button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Settings</button>
 </nav>
 
 <script>
@@ -171,6 +185,11 @@ function renderJobs(){
     $('#jobs').append(r)});
   const open=jobs.filter(j=>j.state!=='done').length;$('#qn').textContent=open?` (${open})`:'';
 }
+function applyTheme(m){const r=document.documentElement;if(m==='light'||m==='dark')r.dataset.theme=m;else delete r.dataset.theme;
+  $$('#theme button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.themePick===m))}
+let savedTheme='system';try{savedTheme=localStorage.getItem('curator-theme')||'system'}catch(e){}
+applyTheme(savedTheme);
+$$('#theme button').forEach(b=>b.onclick=()=>{const m=b.dataset.themePick;applyTheme(m);try{if(m==='system')localStorage.removeItem('curator-theme');else localStorage.setItem('curator-theme',m)}catch(e){}});
 function render(){renderAdd();renderLib();renderJobs()}
 render();
 </script>
