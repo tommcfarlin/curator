@@ -89,7 +89,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 <section id="library" hidden>
   <h2>On your Frame</h2>
   <div class="grid" id="grid"></div>
-  <p class="note">Tap a photo to show it now or remove it. Your Samsung art stays untouched.</p>
+  <p class="note">Tap a photo to show it now. You can remove only the photos you added with Curator.</p>
 </section>
 
 <section id="queue" hidden>
@@ -102,6 +102,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 <div class="sheet" id="sheet"><div class="in">
   <div class="art" id="sart"></div>
   <b id="stitle"></b>
+  <p class="note" id="snote" hidden>This is Samsung art. Curator can show it but cannot remove it. Use the TV to remove it.</p>
   <button class="btn primary" id="show">Show now</button>
   <button class="btn danger" id="del">Remove from Frame</button>
   <button class="btn" id="close">Cancel</button>
@@ -118,7 +119,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const gradients=[['#2b5876','#4e4376'],['#c06c84','#f8b195'],['#355c7d','#6c5b7b'],['#134e5e','#71b280'],['#5f2c82','#49a09d'],['#cb2d3e','#ef473a']];
 const art=(i)=>`linear-gradient(135deg,${gradients[i%6][0]},${gradients[i%6][1]})`;
 let tvOn=true, mode='crop', items=[], jobs=[], tvArt=[
- {id:1,name:'Evening Lake',g:0,now:true},{id:2,name:'Peach Dunes',g:1},{id:3,name:'Blue Hour',g:2},{id:4,name:'Green Ridge',g:3}], sel=null, n=0;
+ {id:1,name:'Evening Lake',g:0,now:true,samsung:true},{id:2,name:'Peach Dunes',g:1,mine:true},{id:3,name:'Blue Hour',g:2,samsung:true},{id:4,name:'Green Ridge',g:3,mine:true}], sel=null, n=0;
 
 function tab(t){$$('main>section').forEach(s=>s.hidden=s.id!==t);$$('nav button').forEach(b=>b.dataset.tab===t?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));render()}
 $$('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
@@ -147,15 +148,15 @@ $('#send').onclick=()=>{
   items.forEach(it=>{jobs.unshift({id:++n,name:it.f.name,url:it.url,state:'preparing',p:0})});
   items=[];tab('queue');jobs.filter(j=>j.state==='preparing').forEach(run)};
 function run(j){let p=0;const t=setInterval(()=>{p+=25;j.p=p;if(p>=100){clearInterval(t);j.state='waiting';tvOn?upload(j):0}render()},350)}
-function upload(j){j.state='sending';render();setTimeout(()=>{if(!tvOn){j.state='waiting';render();return}j.state='done';tvArt.unshift({id:100+j.id,name:j.name.replace(/\.[^.]+$/,''),url:j.url});render()},1400)}
+function upload(j){j.state='sending';render();setTimeout(()=>{if(!tvOn){j.state='waiting';render();return}j.state='done';tvArt.unshift({mine:true,id:100+j.id,name:j.name.replace(/\.[^.]+$/,''),url:j.url});render()},1400)}
 function flush(){jobs.filter(j=>j.state==='waiting'||j.state==='failed').forEach(upload)}
 
 function tile(a,i){return a.url?`background:url(${a.url}) center/cover`:`background:${art(a.g??i)}`}
 function renderLib(){
   $('#grid').innerHTML='';
   tvArt.forEach((a,i)=>{const b=document.createElement('button');b.className='tile';
-    b.innerHTML=`<span class="art" style="${tile(a,i)}"></span>${a.now?'<span class="badge">Showing</span>':''}<small>${a.name}</small>`;
-    b.onclick=()=>{sel=a;$('#sart').style.cssText=tile(a,i);$('#stitle').textContent=a.name;$('#sheet').classList.add('open')};$('#grid').append(b)});
+    b.innerHTML=`<span class="art" style="${tile(a,i)}"></span>${a.now?'<span class="badge">Showing</span>':''}<small>${a.name}${a.samsung?' · Samsung':''}</small>`;
+    b.onclick=()=>{sel=a;$('#sart').style.cssText=tile(a,i);$('#stitle').textContent=a.name;$('#del').hidden=!a.mine;$('#snote').hidden=!!a.mine;$('#sheet').classList.add('open')};$('#grid').append(b)});
 }
 $('#close').onclick=()=>$('#sheet').classList.remove('open');
 $('#show').onclick=()=>{tvArt.forEach(a=>a.now=a===sel);$('#sheet').classList.remove('open');renderLib()};

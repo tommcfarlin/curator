@@ -23,6 +23,14 @@ This is the first deliverable. The image resize module and the retry queue exist
 | Folder watcher | `curator/watch.py` | planned |
 | Entry point | `curator/__main__.py` | planned |
 
+## Decisions (2026-11-06)
+
+- The "On the TV" tab lists all art on the TV, including Samsung art. Curator can show any piece. Curator can delete only photos that it uploaded. It keeps a record of the content IDs that it uploaded, and it checks that record before every delete.
+- Version 1 has no mat. Photos fill the screen.
+- There is no login. Anyone on the home Wi-Fi can open the page.
+- Version 1 has no rotation timer. The photo that you pick is the photo that stays on the screen. A rotation timer is a future item (GitHub milestone "Future State").
+- Open question: how the art API marks Samsung art and uploaded photos. We will check this on the TV with the installed library before we write the list code.
+
 ## Flow
 
 1. An image arrives from the web page or the watched folder.
