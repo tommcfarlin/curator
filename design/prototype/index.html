@@ -60,6 +60,14 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 .sheet .art{aspect-ratio:16/9;border-radius:10px;width:100%}
 .empty{color:var(--muted);text-align:center;padding:28px 0}
 .note{font-size:13px;color:var(--muted);margin:8px 2px}
+.callout{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);padding:14px;margin:0 0 14px;font-size:14px;color:var(--muted)}
+.callout b{color:var(--text)}
+.callout svg{flex:none;width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
+.callout p{margin:0}.callout p+p{margin-top:6px}
+.q{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;font-size:13px;border-top:.5px solid var(--line)}
+.q i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--ok)}
+.q.warn i{background:var(--warn)}.q.bad i{background:var(--bad)}
+.q div b{display:block;font-size:14px}.q div span{color:var(--muted)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -72,6 +80,13 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 
 <main>
 <section id="add">
+  <div class="callout" role="note">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+    <div>
+      <p><b>Best results: 3840 × 2160 pixels or larger</b> (4K, 16:9). <b>Minimum: 1920 × 1080.</b></p>
+      <p>Smaller photos are enlarged and can look blurry. Photos from a recent phone are usually big enough. Curator never stretches a photo, so it will not look squashed.</p>
+    </div>
+  </div>
   <div class="drop" id="drop">
     <strong>Add photos to your Frame</strong>
     Pick from your camera roll or files.
@@ -141,7 +156,19 @@ $$('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 
 $('#tv').onclick=()=>{tvOn=!tvOn;$('#tv').classList.toggle('off',!tvOn);$('#tvtxt').textContent=tvOn?'Frame online · Art Mode':'TV is off · will retry';if(tvOn)flush();render()};
 $('#choose').onclick=$('#more').onclick=()=>$('#file').click();
-$('#file').onchange=e=>{for(const f of e.target.files){items.push({f,url:URL.createObjectURL(f),x:50,y:50})}e.target.value='';render()};
+$('#file').onchange=e=>{for(const f of e.target.files){const it={f,url:URL.createObjectURL(f),x:50,y:50,w:0,h:0};items.push(it);
+  const im=new Image();im.onload=()=>{it.w=im.naturalWidth;it.h=im.naturalHeight;render()};im.src=it.url}e.target.value='';render()};
+// Same rules as curator/imaging.py: assess()
+const FW=3840,FH=2160,MIN_W=1920,HEAVY=.35;
+function assess(w,h,m){let s,tr=0;if(m==='crop'){const wide=w*FH>h*FW;const cw=wide?Math.round(h*FW/FH):w,ch=wide?h:Math.round(w*FH/FW);s=FW/cw;tr=1-(cw*ch)/(w*h)}else{s=Math.min(FW/w,FH/h)}
+  return{level:s<=1?'great':s<=FW/MIN_W+1e-9?'good':'too_small',s,tr}}
+function quality(it){if(!it.w)return'';const a=assess(it.w,it.h,mode),px=`${it.w} × ${it.h}`;let c,t,d;
+  if(a.level==='great'){c='';t='Looks sharp';d=`${px} is plenty for the Frame.`}
+  else if(a.level==='good'){c='warn';t='Good enough';d=`${px} will be enlarged ${a.s.toFixed(1)}×. It should look fine from across the room.`}
+  else{c='bad';t='Too small: may look blurry';d=`${px} would be enlarged ${a.s.toFixed(1)}×. The minimum is ${MIN_W} × 1080 after trimming. Choose a bigger photo, or remove this one.`;
+    if(mode==='crop'){const f=assess(it.w,it.h,'fit');if(f.level!=='too_small')d=`${px} would be enlarged ${a.s.toFixed(1)}× to fill the screen. “Show whole photo” enlarges it only ${f.s.toFixed(1)}× and looks fine.`}}
+  let extra='';if(mode==='crop'&&a.tr>HEAVY&&!d.includes('Show whole photo'))extra=` About ${Math.round(a.tr*100)}% of this photo will be trimmed. Try “Show whole photo”, or drag to pick what stays.`;
+  return`<div class="q ${c}"><i></i><div><b>${t}</b><span>${d}${extra}</span></div></div>`}
 $$('.seg button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;$$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#modenote').textContent=mode==='crop'?'Fill screen trims the edges. Drag a photo to choose what stays.':'The whole photo is shown with black bars where it does not fill the screen.';render()});
 
 function renderAdd(){
@@ -150,6 +177,7 @@ function renderAdd(){
   items.forEach((it,i)=>{
     const c=document.createElement('div');c.className='card';
     c.innerHTML=`<div class="frame"><img alt="" src="${it.url}" style="object-fit:${mode==='crop'?'cover':'contain'};object-position:${it.x}% ${it.y}%">${mode==='crop'?'<span class="hint">Drag to reposition</span>':''}</div>
+      ${quality(it)}
       <div class="meta"><span>${it.f.name}</span><button class="rm" aria-label="Remove ${it.f.name}">✕</button></div>`;
     c.querySelector('.rm').onclick=()=>{items.splice(i,1);render()};
     if(mode==='crop'){const fr=c.querySelector('.frame'),im=c.querySelector('img');let d=null;

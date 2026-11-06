@@ -49,6 +49,17 @@ This is the first deliverable. The image resize module and the retry queue exist
 - The output is always JPEG, quality 92. This keeps files small for the upload.
 - HEIC is not supported. Phone browsers usually convert it to JPEG on upload.
 
+## Photo size rules
+
+- Best: 3840 x 2160 pixels or larger (4K, 16:9). Minimum: 1920 x 1080.
+- The page tells you the size rule on the Add screen, before you pick photos.
+- After you pick a photo, the page shows one of three results on its card: "Looks sharp" (no enlargement), "Good enough" (enlarged up to 2 times) or "Too small" (enlarged more than 2 times, so it can look blurry).
+- The check uses the part of the photo that the Frame shows. In Fill screen mode that is the trimmed part. A tall phone photo can pass in Show whole photo mode and fail in Fill screen mode. The message then suggests Show whole photo.
+- If Fill screen mode trims more than 35% of a photo, the card says how much it trims.
+- Curator never stretches a photo, so a photo cannot look squashed. The only quality problem is blur from enlargement.
+- A "Too small" photo can still be sent. The card warns you, and you can remove it. We can make this a hard block later.
+- The rules live in `curator/imaging.py` (`assess`) and are tested. The prototype page copies the same numbers.
+
 ## Retry queue
 
 - The queue is a SQLite file. It is in the Python standard library, so it adds no dependency.

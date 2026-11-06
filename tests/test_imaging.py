@@ -87,3 +87,47 @@ def test_output_dir_is_created(tmp_path):
     src = make(tmp_path / "a.png", (32, 18))
     out = prepare_image(src, tmp_path / "deep" / "er" / "o.jpg", size=(32, 18))
     assert out.exists()
+
+
+from curator.imaging import assess
+
+
+def test_assess_4k_is_great():
+    a = assess(3840, 2160)
+    assert a.level == "great" and a.scale == 1 and a.trimmed == 0
+
+
+def test_assess_minimum_1080p_is_good():
+    assert assess(1920, 1080).level == "good"
+
+
+def test_assess_just_under_minimum_is_too_small():
+    assert assess(1919, 1079).level == "too_small"
+
+
+def test_assess_big_phone_photo_is_great_in_crop_mode():
+    a = assess(4032, 3024)  # 4:3 photo, trimmed to 16:9
+    assert a.level == "great"
+    assert round(a.trimmed, 2) == 0.25 and not a.heavy_trim
+
+
+def test_assess_portrait_photo_is_heavily_trimmed_in_crop_mode():
+    a = assess(3024, 4032)
+    assert a.heavy_trim and a.trimmed > 0.5
+
+
+def test_assess_portrait_in_fit_mode_is_enlarged_by_height():
+    a = assess(3024, 4032, mode="fit")
+    assert a.trimmed == 0 and a.scale == 2160 / 4032 and a.level == "great"
+
+
+def test_assess_small_portrait_crop_vs_fit():
+    assert assess(1080, 2400, mode="crop").level == "too_small"  # 1080 wide stretched to 3840
+    assert assess(1080, 2400, mode="fit").level == "great"
+
+
+def test_assess_rejects_bad_input():
+    with pytest.raises(ValueError):
+        assess(0, 10)
+    with pytest.raises(ValueError):
+        assess(10, 10, mode="stretch")
