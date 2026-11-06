@@ -1,0 +1,20 @@
+# Copy this file to config/local.toml. The copy is ignored by git.
+[tv]
+host = "192.168.1.20"
+port = 8002
+# The pairing token is saved here after the first Allow on the TV.
+token_file = "config/token.txt"
+name = "FrameArtPi"
+
+[web]
+bind = "0.0.0.0"
+port = 8080
+
+[storage]
+data_dir = "data"
+inbox_dir = "inbox"
+
+[image]
+width = 3840
+height = 2160
+jpeg_quality = 92

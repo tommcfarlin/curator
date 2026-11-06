@@ -1,0 +1,15 @@
+[Unit]
+Description=Frame Art Pi (send images to a Samsung The Frame)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/frame-art-pi
+ExecStart=/opt/frame-art-pi/.venv/bin/python -m frameart
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

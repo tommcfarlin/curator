@@ -1,0 +1,9 @@
+[project]
+name = "frame-art-pi"
+version = "0.1.0"
+description = "Upload your own images from a phone to a Samsung The Frame, from a Raspberry Pi."
+requires-python = ">=3.10"
+dependencies = ["Pillow>=10", "samsungtvws>=3.0.7,<4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
