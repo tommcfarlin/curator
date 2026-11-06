@@ -57,18 +57,11 @@ This is the first deliverable. The image resize module and the retry queue exist
 - Git ignores `config/local.toml` and `config/token.txt`. The token and the TV address never go into git.
 - The exact method names can change between library versions. We will pin the version and check the names against the installed code before we write `tv.py`.
 
-## Web page
-
-- Served by the Pi, for example `http://raspberrypi.local:8080`.
-- Upload one or more images. Choose crop or fit.
-- List the artwork on the TV, with thumbnails. Delete a piece.
-- Show the queue state: pending, done, failed.
-- There is no login. The service is for a home network only. Do not expose port 8080 to the internet.
-
 ## Phone web app
 
 The web app is the main way to add photos. It must work in Safari on iPhone and in Chrome on Android, with no app install.
 
+- Upload one or more images, and choose crop or fit for each batch.
 - The page is one screen with a large "Choose photos" button. It uses a file input that allows many files.
 - On iPhone, a file input that lists `image/jpeg` and `image/png` makes Safari convert HEIC photos to JPEG before upload. A plain `image/*` input does not. We will list the types.
 - The page shows a progress bar for each upload, then the state of each photo: preparing, waiting for the TV, on the TV, or failed.
