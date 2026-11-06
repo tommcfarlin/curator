@@ -65,3 +65,18 @@ Turn off password login on the Pi once the key works. Edit `/etc/ssh/sshd_config
 ## Rules for Claude
 
 Claude connects only after you give a clear yes in chat. Claude does not ask for or type passwords. Claude does not change SSH settings or install software on the Pi without asking first.
+
+## Pi facts (checked 2026-11-06)
+
+| Item | Value |
+| --- | --- |
+| Model | Raspberry Pi 4 Model B Rev 1.5, 4 GB memory |
+| OS | Debian 12 (bookworm), 64-bit (aarch64) |
+| Python | 3.11.2 |
+| User and host | `pi` on `raspberrypi` |
+| LAN address | 192.168.1.10 |
+| Other address | 100.x (Tailscale) |
+| Disk | 914 GB, 2% used |
+| mDNS (`raspberrypi.local`) | running |
+| Reach the TV (ping) | yes, about 5 ms |
+| SSH key login | not set up yet (`~/.ssh/authorized_keys` missing) |
