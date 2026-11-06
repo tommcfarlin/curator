@@ -8,28 +8,24 @@ The TV is a 2021 The Frame, model QN55LS03AAFXZA, Tizen 6.0, at 192.168.1.20.
 
 ## Status
 
-This is the first deliverable. The image resize module and the retry queue exist and have tests. The TV client, the web page, the folder watcher and the service entry point are not written yet. Nothing in this project has connected to the TV or to the Pi.
+Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac and pass 48 tests. The real TV client (`curator/tv.py`, class for `samsungtvws`) is not written. Nothing in this project has connected to the TV. The Pi has SSH access but no Curator code.
+
+Plan: (1) build and test on the Mac with the fake TV (done), (2) one supervised check against the real TV, (3) deploy to the Pi with systemd, (4) switch the Pi to the real TV.
 
 ## Parts
 
 | Part | File | Status |
 | --- | --- | --- |
-| Image resize and crop | `curator/imaging.py` | done, tested |
+| Image resize, crop and size check | `curator/imaging.py` | done, tested |
 | Retry queue (SQLite) | `curator/queue.py` | done, tested |
-| Settings and token loader | `curator/config.py` | planned |
-| TV client (art API) | `curator/tv.py` | planned |
-| Worker loop | `curator/worker.py` | planned |
-| Web page and API | `curator/web.py` | planned |
-| Folder watcher | `curator/watch.py` | planned |
-| Entry point | `curator/__main__.py` | planned |
-
-## Decisions (2026-11-06)
-
-- The "On the TV" tab lists all art on the TV, including Samsung art. Curator can show any piece. Curator can delete only photos that it uploaded. It keeps a record of the content IDs that it uploaded, and it checks that record before every delete.
-- Version 1 has no mat. Photos fill the screen.
-- There is no login. Anyone on the home Wi-Fi can open the page.
-- Version 1 has no rotation timer. The photo that you pick is the photo that stays on the screen. A rotation timer is a future item (GitHub milestone "Future State").
-- Open question: how the art API marks Samsung art and uploaded photos. We will check this on the TV with the installed library before we write the list code.
+| Settings loader | `curator/config.py` | done, tested |
+| Record of Curator uploads | `curator/library.py` | done, tested |
+| TV interface and fake TV | `curator/tv.py` | done (fake only) |
+| Worker | `curator/worker.py` | done, tested |
+| Web app and JSON API | `curator/web.py`, `curator/static/index.html` | done, tested |
+| Entry point | `curator/__main__.py` | done (`--fake-tv` only) |
+| Real TV client | `curator/tv.py` | planned (stage 2) |
+| Folder watcher | `curator/watch.py` | planned (after version 1) |
 
 ## Flow
 

@@ -1,2 +1,4 @@
 Pillow>=10
+Flask>=3,<4
+waitress>=3
 samsungtvws>=3.0.7,<4   # LGPL-3.0, see docs/DESIGN.md

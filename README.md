@@ -8,7 +8,25 @@ This project uses an unofficial interface. Samsung does not document it. A TV so
 
 ## Status
 
-Early. The image module and the retry queue work and have tests. The TV client, web page, folder watcher and service are not written yet. See `docs/DESIGN.md`.
+Early. The phone web app, the worker and the retry queue run on a computer with a pretend TV. The real TV client is not written yet. See `docs/DESIGN.md`.
+
+## Try it on your computer
+
+This uses a pretend TV. It needs no TV and no Pi. In the page, tap the status pill at the top to switch the pretend TV on or off.
+
+```bash
+python3 -m venv .venv
+```
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+```
+
+```bash
+.venv/bin/python -m curator --fake-tv --port 8087
+```
+
+Open `http://127.0.0.1:8087` in a browser. To open it from your phone, add `--bind 0.0.0.0` and use your computer's address on your Wi-Fi. The page has no login, so use that only on your home network. Press Control-C to stop the server.
 
 ## Run the tests on your computer
 

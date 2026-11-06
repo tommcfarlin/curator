@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Curator</title>
+<script>try{var m=localStorage.getItem('curator-theme');if(m==='light'||m==='dark')document.documentElement.dataset.theme=m}catch(e){}</script>
+<style>
+:root{--bg:#000;--surface:#1c1c1e;--surface2:#2c2c2e;--line:#38383a;--text:#fff;--muted:#8e8e93;--accent:#0a84ff;--accent-ink:#fff;--ok:#30d158;--warn:#ff9f0a;--bad:#ff453a;--bar:rgba(28,28,30,.72);--r:12px;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme]){--bg:#f2f2f7;--surface:#fff;--surface2:#e9e9ee;--line:#d1d1d6;--text:#000;--muted:#6c6c70;--accent:#007aff;--ok:#248a3d;--warn:#c93400;--bad:#d70015;--bar:rgba(249,249,249,.78);color-scheme:light}}
+:root[data-theme=light]{--bg:#f2f2f7;--surface:#fff;--surface2:#e9e9ee;--line:#d1d1d6;--text:#000;--muted:#6c6c70;--accent:#007aff;--ok:#248a3d;--warn:#c93400;--bad:#d70015;--bar:rgba(249,249,249,.78);color-scheme:light}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',system-ui,sans-serif}
+button,input{font-family:inherit}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+body{min-height:100dvh;padding:0 16px calc(84px + env(safe-area-inset-bottom))}
+.wrap{max-width:640px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 10px;position:sticky;top:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);margin:0 -16px;padding-left:16px;padding-right:16px;z-index:5}
+h1{font:700 28px/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",system-ui,sans-serif;margin:0;letter-spacing:-.4px}
+.pill{display:flex;gap:8px;align-items:center;border:0;background:var(--surface);color:var(--text);border-radius:999px;padding:8px 12px;font-size:13px;min-height:40px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.off .dot{background:var(--bad)}
+h2{font-size:13px;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.02em}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:var(--r);border:0;background:var(--surface);color:var(--text);font-weight:600;font-size:16px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}.btn:not(.primary):not(.danger){color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.btn[disabled]{opacity:.45}
+.drop{border:0;border-radius:var(--r);padding:34px 16px;text-align:center;background:var(--surface);color:var(--muted)}
+.drop strong{display:block;color:var(--text);font-size:18px;margin-bottom:4px}
+.drop .btn{margin-top:16px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:12px;padding:4px;gap:4px}
+.seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:600;font-size:15px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--text);box-shadow:0 1px 3px #0003}
+:root:not([data-theme=dark]) .seg button[aria-pressed=true]{}
+.card{background:var(--surface);border:0;border-radius:var(--r);overflow:hidden;margin:12px 0}
+.frame{position:relative;aspect-ratio:16/9;background:#000;overflow:hidden;touch-action:none}
+.frame img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
+.hint{position:absolute;left:8px;bottom:8px;font-size:12px;background:#000a;color:#fff;border-radius:6px;padding:3px 8px}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;font-size:14px}
+.meta span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rm{border:0;background:none;color:var(--muted);min-width:44px;min-height:44px;font-size:20px;cursor:pointer}
+.chip{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface2);white-space:nowrap}
+.chip.ok{color:var(--ok)}.chip.warn{color:var(--warn)}.chip.bad{color:var(--bad)}
+.bar{height:3px;background:var(--surface2)}.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{position:relative;padding:0;border:0;border-radius:12px;overflow:hidden;background:var(--surface);cursor:pointer;color:inherit;text-align:left}
+.tile .art{aspect-ratio:16/9;display:block;width:100%}
+.tile small{display:block;padding:8px 10px;color:var(--muted);font-size:13px}
+.badge{position:absolute;top:8px;left:8px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px}
+.row{display:flex;align-items:center;gap:12px;background:var(--surface);border:0;border-radius:12px;padding:10px;margin:8px 0}
+.row .art{width:72px;aspect-ratio:16/9;border-radius:6px;flex:none}
+.row .t{flex:1;min-width:0}.row .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}.row .t span{font-size:13px;color:var(--muted)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:9}
+nav button{flex:1;min-height:64px;border:0;background:none;color:var(--muted);font-weight:600;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+nav button[aria-current=page]{color:var(--accent)}
+nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sheet{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;z-index:20}
+.sheet.open{display:flex}
+.sheet .in{width:100%;max-width:640px;margin:0 auto;background:var(--surface);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));display:grid;gap:10px}
+.sheet .art{aspect-ratio:16/9;border-radius:10px;width:100%}
+.empty{color:var(--muted);text-align:center;padding:28px 0}
+.note{font-size:13px;color:var(--muted);margin:8px 2px}
+.callout{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);padding:14px;margin:0 0 14px;font-size:14px;color:var(--muted)}
+.callout b{color:var(--text)}
+.callout svg{flex:none;width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
+.callout p{margin:0}.callout p+p{margin-top:6px}
+.q{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;font-size:13px;border-top:.5px solid var(--line)}
+.q i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--ok)}
+.q.warn i{background:var(--warn)}.q.bad i{background:var(--bad)}
+.q div b{display:block;font-size:14px}.q div span{color:var(--muted)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Curator</h1>
+  <button class="pill" id="tv" aria-label="TV status. Tap to switch the demo TV on or off."><span class="dot"></span><span id="tvtxt">Frame online · Art Mode</span></button>
+</header>
+
+<main>
+<section id="add">
+  <div class="callout" role="note">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+    <div>
+      <p><b>Best results: 3840 × 2160 pixels or larger</b> (4K, 16:9). <b>Minimum: 1920 × 1080.</b></p>
+      <p>Smaller photos are enlarged and can look blurry. Photos from a recent phone are usually big enough. Curator never stretches a photo, so it will not look squashed.</p>
+    </div>
+  </div>
+  <div class="drop" id="drop">
+    <strong>Add photos to your Frame</strong>
+    Pick from your camera roll or files.
+    <button class="btn primary" id="choose">Choose photos</button>
+    <input id="file" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+  </div>
+  <div id="batch" hidden>
+    <h2>How should they fit?</h2>
+    <div class="seg" role="group" aria-label="Fit mode">
+      <button aria-pressed="true" data-mode="crop">Fill screen</button>
+      <button aria-pressed="false" data-mode="fit">Show whole photo</button>
+    </div>
+    <p class="note" id="modenote">Fill screen trims the edges. Drag a photo to choose what stays.</p>
+    <div id="cards"></div>
+    <button class="btn primary" id="send">Send to Frame</button>
+    <button class="btn" id="more" style="margin-top:10px">Add more photos</button>
+  </div>
+</section>
+
+<section id="library" hidden>
+  <h2>On your Frame</h2>
+  <div class="grid" id="grid"></div>
+  <p class="note">Tap a photo to show it now. You can remove only the photos you added with Curator.</p>
+</section>
+
+<section id="queue" hidden>
+  <h2>Activity</h2>
+  <div id="jobs"></div>
+</section>
+<section id="settings" hidden>
+  <h2>Appearance</h2>
+  <div class="seg three" role="group" aria-label="Appearance" id="theme">
+    <button data-theme-pick="system" aria-pressed="true">System</button>
+    <button data-theme-pick="light" aria-pressed="false">Light</button>
+    <button data-theme-pick="dark" aria-pressed="false">Dark</button>
+  </div>
+  <p class="note">System follows your phone's light or dark setting.</p>
+</section>
+</main>
+</div>
+
+<div class="sheet" id="sheet"><div class="in">
+  <div class="art" id="sart"></div>
+  <b id="stitle"></b>
+  <p class="note" id="snote" hidden>This is Samsung art. Curator can show it but cannot remove it. Use the TV to remove it.</p>
+  <button class="btn primary" id="show">Show now</button>
+  <button class="btn danger" id="del">Remove from Frame</button>
+  <button class="btn" id="close">Cancel</button>
+</div></div>
+
+<nav aria-label="Sections">
+  <button data-tab="add" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+  <button data-tab="library"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>On the TV</button>
+  <button data-tab="queue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Activity<span id="qn"></span></button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Settings</button>
+</nav>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let mode='crop', items=[], uploads=[], jobs=[], art=[], artError='', tvOnline=true, fake=false, sel=null, uid=0;
+
+function tab(t){$$('main>section').forEach(s=>s.hidden=s.id!==t);$$('nav button').forEach(b=>b.dataset.tab===t?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));if(t==='library')loadArt();render()}
+$$('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+
+async function api(path,opt){const r=await fetch(path,opt);let j={};try{j=await r.json()}catch(e){}return{ok:r.ok,status:r.status,json:j}}
+
+// TV status pill. In development with a fake TV, tapping it switches the fake TV on or off.
+function renderTv(){$('#tv').classList.toggle('off',!tvOnline);$('#tvtxt').textContent=tvOnline?'Frame online · Art Mode':'TV is off · will retry'}
+$('#tv').onclick=async()=>{if(!fake)return;await api('/api/dev/tv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({online:!tvOnline})});await loadStatus();loadArt()};
+
+$('#choose').onclick=$('#more').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{for(const f of e.target.files){const it={f,url:URL.createObjectURL(f),x:50,y:50,w:0,h:0};items.push(it);
+  const im=new Image();im.onload=()=>{it.w=im.naturalWidth;it.h=im.naturalHeight;render()};im.src=it.url}e.target.value='';render()};
+// Same rules as curator/imaging.py: assess()
+const FW=3840,FH=2160,MIN_W=1920,HEAVY=.35;
+function assess(w,h,m){let s,tr=0;if(m==='crop'){const wide=w*FH>h*FW;const cw=wide?Math.round(h*FW/FH):w,ch=wide?h:Math.round(w*FH/FW);s=FW/cw;tr=1-(cw*ch)/(w*h)}else{s=Math.min(FW/w,FH/h)}
+  return{level:s<=1?'great':s<=FW/MIN_W+1e-9?'good':'too_small',s,tr}}
+function quality(it){if(!it.w)return'';const a=assess(it.w,it.h,mode),px=`${it.w} × ${it.h}`;let c,t,d;
+  if(a.level==='great'){c='';t='Looks sharp';d=`${px} is plenty for the Frame.`}
+  else if(a.level==='good'){c='warn';t='Good enough';d=`${px} will be enlarged ${a.s.toFixed(1)}×. It should look fine from across the room.`}
+  else{c='bad';t='Too small: may look blurry';d=`${px} would be enlarged ${a.s.toFixed(1)}×. The minimum is ${MIN_W} × 1080 after trimming. Choose a bigger photo, or remove this one.`;
+    if(mode==='crop'){const f=assess(it.w,it.h,'fit');if(f.level!=='too_small')d=`${px} would be enlarged ${a.s.toFixed(1)}× to fill the screen. “Show whole photo” enlarges it only ${f.s.toFixed(1)}× and looks fine.`}}
+  let extra='';if(mode==='crop'&&a.tr>HEAVY&&!d.includes('Show whole photo'))extra=` About ${Math.round(a.tr*100)}% of this photo will be trimmed. Try “Show whole photo”, or drag to pick what stays.`;
+  return`<div class="q ${c}"><i></i><div><b>${t}</b><span>${d}${extra}</span></div></div>`}
+$$('.seg:not(.three) button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;$$('.seg:not(.three) button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#modenote').textContent=mode==='crop'?'Fill screen trims the edges. Drag a photo to choose what stays.':'The whole photo is shown with black bars where it does not fill the screen.';render()});
+
+function renderAdd(){
+  $('#drop').hidden=items.length>0;$('#batch').hidden=!items.length;
+  $('#cards').innerHTML='';
+  items.forEach((it,i)=>{
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML=`<div class="frame"><img alt="" src="${it.url}" style="object-fit:${mode==='crop'?'cover':'contain'};object-position:${it.x}% ${it.y}%">${mode==='crop'?'<span class="hint">Drag to reposition</span>':''}</div>
+      ${quality(it)}
+      <div class="meta"><span>${esc(it.f.name)}</span><button class="rm" aria-label="Remove ${esc(it.f.name)}">✕</button></div>`;
+    c.querySelector('.rm').onclick=()=>{items.splice(i,1);render()};
+    if(mode==='crop'){const fr=c.querySelector('.frame'),im=c.querySelector('img');let d=null;
+      fr.onpointerdown=e=>{d={x:e.clientX,y:e.clientY,ox:it.x,oy:it.y};fr.setPointerCapture(e.pointerId)};
+      fr.onpointermove=e=>{if(!d)return;it.x=Math.min(100,Math.max(0,d.ox-(e.clientX-d.x)/fr.clientWidth*100));it.y=Math.min(100,Math.max(0,d.oy-(e.clientY-d.y)/fr.clientHeight*100));im.style.objectPosition=`${it.x}% ${it.y}%`};
+      fr.onpointerup=()=>d=null}
+    $('#cards').append(c)});
+  $('#send').textContent=`Send ${items.length} to Frame`;
+}
+
+// Upload one photo with progress. The server prepares it and queues it for the TV.
+function sendOne(it,m){const u={id:++uid,name:it.f.name,url:it.url,p:0,state:'uploading',error:''};uploads.unshift(u);
+  const fd=new FormData();fd.append('file',it.f);fd.append('mode',m);fd.append('fx',it.x);fd.append('fy',it.y);
+  const x=new XMLHttpRequest();x.open('POST','/api/upload');
+  x.upload.onprogress=e=>{if(e.lengthComputable){u.p=Math.round(e.loaded/e.total*100);renderJobs()}};
+  x.onload=()=>{let j={};try{j=JSON.parse(x.responseText)}catch(e){}
+    if(x.status===201){uploads=uploads.filter(v=>v!==u);loadStatus()}else{u.state='failed';u.error=j.message||'Upload failed.';render()}};
+  x.onerror=()=>{u.state='failed';u.error='Could not reach Curator. Check your Wi-Fi.';render()};
+  x.send(fd)}
+$('#send').onclick=()=>{const batch=items;items=[];batch.forEach(it=>sendOne(it,mode));tab('queue')};
+
+const label={uploading:['Uploading','warn'],waiting:['Waiting for TV','warn'],sending:['Sending…','warn'],done:['On the TV','ok'],failed:['Failed','bad']};
+function renderJobs(){
+  const rows=[...uploads.map(u=>({...u,local:true})),...jobs];
+  $('#jobs').innerHTML=rows.length?'':'<div class="empty">Nothing yet. Photos you send show up here.</div>';
+  rows.forEach(j=>{const [t,c]=label[j.state]||[j.state,''];const r=document.createElement('div');r.className='row';
+    const sub=j.local?(j.state==='failed'?j.error:j.p+'%'):j.state==='waiting'?'The TV is off. Curator keeps trying.':j.state==='failed'?(j.error||'Curator gave up.'):'';
+    r.innerHTML=`<span class="art" style="background:url(${esc(j.url||j.thumb)}) center/cover"></span><div class="t"><b>${esc(j.name)}</b><span>${esc(sub)}</span></div>${j.state==='failed'&&!j.local?'<button class="chip bad retry">Retry</button>':`<span class="chip ${c}">${t}</span>`}`;
+    const rb=r.querySelector('.retry');if(rb)rb.onclick=async()=>{await api(`/api/jobs/${j.id}/retry`,{method:'POST'});loadStatus()};
+    $('#jobs').append(r)});
+  const open=rows.filter(j=>j.state!=='done'&&j.state!=='failed').length;$('#qn').textContent=open?` (${open})`:'';
+}
+
+function renderLib(){
+  const g=$('#grid');g.innerHTML='';
+  if(artError){g.innerHTML=`<div class="empty" style="grid-column:1/-1">${esc(artError)}</div>`;return}
+  art.forEach(a=>{const b=document.createElement('button');b.className='tile';
+    b.innerHTML=`<span class="art" style="background:url(${esc(a.thumb)}) center/cover"></span>${a.current?'<span class="badge">Showing</span>':''}<small>${esc(a.name)}${a.mine?'':' · Samsung'}</small>`;
+    b.onclick=()=>{sel=a;$('#sart').style.cssText=`background:url(${a.thumb}) center/cover`;$('#stitle').textContent=a.name;$('#del').hidden=!a.mine;$('#snote').hidden=a.mine;$('#sheet').classList.add('open')};g.append(b)});
+}
+$('#close').onclick=()=>$('#sheet').classList.remove('open');
+$('#show').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST'});loadArt()};
+$('#del').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}`,{method:'DELETE'});loadArt()};
+
+async function loadStatus(){try{const r=await api('/api/status');if(r.ok){jobs=r.json.jobs;tvOnline=r.json.tv_online;fake=r.json.fake;renderTv();renderJobs()}}catch(e){}}
+let artKey='';
+async function loadArt(){let e='',a=art;try{const r=await api('/api/art');if(r.ok){a=r.json.art}else{e=r.status===503?'The TV is off, so the list is not available. Photos you send still wait in Activity.':'Could not load the list.'}}catch(x){e='Could not reach Curator.'}
+  const k=JSON.stringify([a,e]);if(k===artKey)return;artKey=k;art=a;artError=e;renderLib()}
+
+function applyTheme(m){const r=document.documentElement;if(m==='light'||m==='dark')r.dataset.theme=m;else delete r.dataset.theme;
+  $$('#theme button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.themePick===m))}
+let savedTheme='system';try{savedTheme=localStorage.getItem('curator-theme')||'system'}catch(e){}
+applyTheme(savedTheme);
+$$('#theme button').forEach(b=>b.onclick=()=>{const m=b.dataset.themePick;applyTheme(m);try{if(m==='system')localStorage.removeItem('curator-theme');else localStorage.setItem('curator-theme',m)}catch(e){}});
+function render(){renderAdd();renderLib();renderJobs()}
+render();loadStatus();
+setInterval(()=>{if(!document.hidden){loadStatus();if(!$('#library').hidden)loadArt()}},3000);
+</script>
+</body>
+</html>
