@@ -1,6 +1,6 @@
-# Frame Art Pi
+# Curator
 
-A small service for a Raspberry Pi. You upload your own images from a phone or computer. The service sends them to the Art Mode of a Samsung The Frame. You do not need a Samsung Art Store subscription.
+Curator hangs your own photos in the Art Mode of your Samsung The Frame. You pick photos on your phone, a Raspberry Pi on your home network prepares them, and the TV shows them in Art Mode like any Samsung artwork. You do not need a Samsung Art Store subscription.
 
 ## Warning
 
@@ -31,12 +31,12 @@ python3 -m venv .venv
 These steps are a plan. The Pi model, the OS and the SSH access are not known yet. Do not follow them until the service code is complete.
 
 1. Install Raspberry Pi OS and make sure that the Pi has Python 3.10 or newer.
-2. Copy this folder to `/opt/frame-art-pi` on the Pi.
+2. Copy this folder to `/opt/curator` on the Pi.
 3. Create the virtual environment and install the requirements.
 4. Copy `config/example.toml` to `config/local.toml`. Set the TV address.
 5. Start the service by hand once. The TV shows an Allow prompt. Approve it with the remote.
-6. Copy `deploy/frame-art-pi.service` to `/etc/systemd/system/`. Edit the user and paths if needed.
-7. Run `sudo systemctl enable --now frame-art-pi`.
+6. Copy `deploy/curator.service` to `/etc/systemd/system/`. Edit the user and paths if needed.
+7. Run `sudo systemctl enable --now curator`.
 8. Open `http://raspberrypi.local:8080` on your phone.
 
 ## Secrets

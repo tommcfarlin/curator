@@ -4,7 +4,7 @@ host = "192.168.1.20"
 port = 8002
 # The pairing token is saved here after the first Allow on the TV.
 token_file = "config/token.txt"
-name = "FrameArtPi"
+name = "Curator"
 
 [web]
 bind = "0.0.0.0"

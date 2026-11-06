@@ -1,7 +1,7 @@
 import pytest
 from PIL import Image
 
-from frameart.imaging import FRAME_SIZE, ImageError, _crop_box, is_supported, prepare_image
+from curator.imaging import FRAME_SIZE, ImageError, _crop_box, is_supported, prepare_image
 
 
 def make(path, size, color=(200, 30, 30)):

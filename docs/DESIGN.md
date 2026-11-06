@@ -1,4 +1,4 @@
-# Design: Frame Art Pi
+# Design: Curator
 
 ## Goal
 
@@ -14,14 +14,14 @@ This is the first deliverable. The image resize module and the retry queue exist
 
 | Part | File | Status |
 | --- | --- | --- |
-| Image resize and crop | `frameart/imaging.py` | done, tested |
-| Retry queue (SQLite) | `frameart/queue.py` | done, tested |
-| Settings and token loader | `frameart/config.py` | planned |
-| TV client (art API) | `frameart/tv.py` | planned |
-| Worker loop | `frameart/worker.py` | planned |
-| Web page and API | `frameart/web.py` | planned |
-| Folder watcher | `frameart/watch.py` | planned |
-| Entry point | `frameart/__main__.py` | planned |
+| Image resize and crop | `curator/imaging.py` | done, tested |
+| Retry queue (SQLite) | `curator/queue.py` | done, tested |
+| Settings and token loader | `curator/config.py` | planned |
+| TV client (art API) | `curator/tv.py` | planned |
+| Worker loop | `curator/worker.py` | planned |
+| Web page and API | `curator/web.py` | planned |
+| Folder watcher | `curator/watch.py` | planned |
+| Entry point | `curator/__main__.py` | planned |
 
 ## Flow
 
@@ -64,6 +64,21 @@ This is the first deliverable. The image resize module and the retry queue exist
 - List the artwork on the TV, with thumbnails. Delete a piece.
 - Show the queue state: pending, done, failed.
 - There is no login. The service is for a home network only. Do not expose port 8080 to the internet.
+
+## Phone web app
+
+The web app is the main way to add photos. It must work in Safari on iPhone and in Chrome on Android, with no app install.
+
+- The page is one screen with a large "Choose photos" button. It uses a file input that allows many files.
+- On iPhone, a file input that lists `image/jpeg` and `image/png` makes Safari convert HEIC photos to JPEG before upload. A plain `image/*` input does not. We will list the types.
+- The page shows a progress bar for each upload, then the state of each photo: preparing, waiting for the TV, on the TV, or failed.
+- A second tab lists the artwork on the TV, with thumbnails and a Delete button.
+- The page is mobile first: large touch targets, one column, no hover actions.
+- Name lookup with `raspberrypi.local` works on iPhone and on most computers. It often fails on Android. The page therefore prints the Pi IP address and a QR code at startup, and the README tells you to give the Pi a fixed address on your router.
+- Framework: Flask. It is small, well known, and runs well on a Pi. We will serve it with `waitress`, not the Flask development server.
+- Upload limit: 25 MB per file. Phone photos are usually 2 to 8 MB.
+- The server checks every upload with Pillow before it accepts the file. It never uses the file name from the phone. It makes its own.
+- No login in version 1. Home network only. A shared PIN is a possible later addition.
 
 ## Watched folder
 

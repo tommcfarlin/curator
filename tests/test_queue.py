@@ -1,4 +1,4 @@
-from frameart.queue import DONE, FAILED, PENDING, RetryQueue
+from curator.queue import DONE, FAILED, PENDING, RetryQueue
 
 
 class Clock:

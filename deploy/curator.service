@@ -1,13 +1,13 @@
 [Unit]
-Description=Frame Art Pi (send images to a Samsung The Frame)
+Description=Curator (send images to a Samsung The Frame)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/opt/frame-art-pi
-ExecStart=/opt/frame-art-pi/.venv/bin/python -m frameart
+WorkingDirectory=/opt/curator
+ExecStart=/opt/curator/.venv/bin/python -m curator
 Restart=on-failure
 RestartSec=10
 
