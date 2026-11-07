@@ -1,11 +1,11 @@
 """The TV side. `TV` is the small interface the rest of Curator uses.
 
-`FakeTV` is for development and tests. The real client for `samsungtvws`
-comes later, after the supervised first connection.
+`FakeTV` is for development and tests. `SamsungTV` talks to the real Frame.
 """
 from __future__ import annotations
 
 import io
+import socket
 import threading
 import uuid
 from dataclasses import dataclass
@@ -33,6 +33,104 @@ class TV(Protocol):
     def select(self, content_id: str) -> None: ...
     def delete(self, content_id: str) -> None: ...
     def thumbnail(self, content_id: str) -> Optional[bytes]: ...
+
+
+class SamsungTV:
+    """The real Frame, through the community `samsungtvws` library (LGPL-3.0).
+
+    It opens one short WebSocket connection per call and closes it again.
+    That is slower than a long connection, but it survives a TV that sleeps
+    or restarts. Calls are serialized with a lock because the TV handles one
+    art session at a time.
+
+    The first connection makes the TV show an Allow prompt. The pairing
+    token goes into `token_file`, which git ignores.
+
+    Method names were checked against samsungtvws 3.0.7. Samsung can change
+    the unofficial API in any update. Errors from the library become
+    `TVUnavailable` so the retry queue handles them.
+    """
+
+    def __init__(self, host: str, port: int = 8002, token_file: Optional[Path] = None,
+                 name: str = "Curator", timeout: float = 15.0, art_factory=None):
+        self.host = host
+        self.port = port
+        self.token_file = Path(token_file) if token_file else None
+        self.name = name
+        self.timeout = timeout
+        self._art_factory = art_factory
+        self._lock = threading.RLock()
+
+    # -- connection helpers -------------------------------------------------
+
+    def _new_art(self):
+        if self._art_factory:
+            return self._art_factory()
+        from samsungtvws import SamsungTVWS  # noqa: F401  (checks the install)
+        from samsungtvws.art import SamsungTVArt
+
+        if self.token_file:
+            self.token_file.parent.mkdir(parents=True, exist_ok=True)
+        return SamsungTVArt(host=self.host, port=self.port, timeout=self.timeout, name=self.name,
+                            token_file=str(self.token_file) if self.token_file else None)
+
+    def _run(self, fn):
+        """Open a connection, run `fn(art)`, close it. Map failures to TVUnavailable."""
+        with self._lock:
+            try:
+                art = self._new_art()
+            except ImportError as e:
+                raise TVUnavailable(f"samsungtvws is not installed: {e}") from e
+            try:
+                art.open()
+                return fn(art)
+            except TVUnavailable:
+                raise
+            except (OSError, TimeoutError) as e:
+                raise TVUnavailable(f"Cannot reach the TV: {e}") from e
+            except Exception as e:  # library and websocket errors
+                raise TVUnavailable(f"The TV did not accept the request: {type(e).__name__}: {e}") from e
+            finally:
+                try:
+                    art.close()
+                except Exception:
+                    pass
+
+    # -- the TV interface ---------------------------------------------------
+
+    def is_available(self) -> bool:
+        """A quick check that the TV port answers. It does not trigger the Allow prompt."""
+        try:
+            with socket.create_connection((self.host, self.port), timeout=2):
+                return True
+        except OSError:
+            return False
+
+    def list_art(self) -> list[ArtItem]:
+        def go(art):
+            items = art.available()
+            cur = art.get_current() or {}
+            cur_id = cur.get("content_id") if isinstance(cur, dict) else None
+            return [ArtItem(i["content_id"], i.get("content_name") or None, i["content_id"] == cur_id)
+                    for i in items if isinstance(i, dict) and i.get("content_id")]
+        return self._run(go)
+
+    def upload(self, path: Path) -> str:
+        # No mat, as decided. Curator already prepared an exact 16:9 JPEG.
+        return self._run(lambda art: art.upload(str(path), matte="none", portrait_matte="none",
+                                                file_type="jpg"))
+
+    def select(self, content_id: str) -> None:
+        self._run(lambda art: art.select_image(content_id, show=True))
+
+    def delete(self, content_id: str) -> None:
+        self._run(lambda art: art.delete(content_id))
+
+    def thumbnail(self, content_id: str) -> Optional[bytes]:
+        def go(art):
+            data = art.get_thumbnail(content_id)
+            return bytes(data) if data else None
+        return self._run(go)
 
 
 _SEED = [("Evening Lake", "#2b5876", "#4e4376"), ("Blue Hour", "#355c7d", "#6c5b7b"),

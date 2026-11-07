@@ -3,12 +3,11 @@ from __future__ import annotations
 
 import argparse
 import logging
-import sys
 
 from . import config
 from .library import Library
 from .queue import RetryQueue
-from .tv import FakeTV
+from .tv import FakeTV, SamsungTV
 from .web import create_app
 from .worker import Worker
 
@@ -23,10 +22,10 @@ def main(argv=None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 
     s = config.load(args.config)
-    if not args.fake_tv:
-        print("The real TV client is not built yet. Run with --fake-tv.", file=sys.stderr)
-        return 2
-    tv = FakeTV()
+    if args.fake_tv:
+        tv = FakeTV()
+    else:
+        tv = SamsungTV(s.tv_host, s.tv_port, s.token_file, s.tv_name)
     queue = RetryQueue(s.db_path)
     library = Library(s.db_path)
     worker = Worker(queue, tv, library, s.thumbs_dir)
@@ -35,7 +34,7 @@ def main(argv=None) -> int:
     bind, port = args.bind or s.web_bind, args.port or s.web_port
     from waitress import serve
 
-    print(f"Curator (fake TV) on http://{bind}:{port}")
+    print(f"Curator ({'fake TV' if args.fake_tv else s.tv_host}) on http://{bind}:{port}")
     serve(app, host=bind, port=port, threads=8)
     return 0
 
