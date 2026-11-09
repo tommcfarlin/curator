@@ -31,7 +31,8 @@ main{padding-top:16px}
 main>section>h2:first-child{margin-top:0}
 header{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 0 10px;position:sticky;top:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);margin:0 -16px;padding-left:16px;padding-right:16px;z-index:5}
 h1{font:700 1.75rem/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",system-ui,sans-serif;margin:0;letter-spacing:-.4px}
-.pill{display:flex;gap:8px;align-items:center;border:0;background:var(--surface);color:var(--text);border-radius:999px;padding:8px 14px;font-size:.88rem;min-height:44px}
+.pill{display:flex;gap:8px;align-items:center;border:0;background:var(--surface);color:var(--text);border-radius:999px;padding:8px 14px;font-size:.94rem;font-weight:600;min-height:44px}
+.pill.fake{cursor:pointer}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
 .off .dot{background:var(--bad)}
 h2{font-size:.82rem;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.02em}
@@ -99,6 +100,21 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 .addr{text-align:center;font-weight:600;word-break:break-all;margin:0 0 6px}
 .steps{margin:6px 0 0;padding-left:1.3em;color:var(--muted);font-size:.94rem}.steps li{margin:4px 0}
 .callout .x{margin-left:auto;align-self:flex-start;border:0;background:none;color:var(--muted);min-width:44px;min-height:44px;font-size:1rem;cursor:pointer}
+.now{display:block;width:100%;padding:0;border:0;border-radius:var(--r);overflow:hidden;background:var(--surface);color:inherit;text-align:left;cursor:pointer;position:relative;font:inherit}
+.now .art{display:block;width:100%;aspect-ratio:16/9;background-color:var(--surface2)}
+.now span.t{display:block;padding:12px 14px 14px}
+.now span.t b{display:block;font-size:1.12rem;font-weight:600;color:var(--text)}
+.now span.t em{display:block;font-style:normal;color:var(--muted);font-size:.94rem;margin-top:2px}
+.tile .art{background-color:var(--surface2)}
+#lib>div h2{margin-top:0}#lib>div:not([hidden])~div h2{margin-top:22px}
+#lib.stale{opacity:.5;pointer-events:none}
+.nonote{color:var(--muted);font-size:.94rem;margin:0 4px}
+.namecard{padding:14px;margin:0 0 14px}
+.namecard p{margin:0 0 10px;font-size:1rem}.namecard p span{display:block;color:var(--muted);font-size:.94rem;margin-top:2px}
+.namecard form{display:flex;gap:8px}
+.namecard .text{flex:1;min-width:0;background:var(--surface2)}
+.namecard .btn{width:auto;min-height:48px;padding:0 20px}
+.link{display:block;border:0;background:none;color:var(--accent);font:inherit;font-size:.94rem;min-height:44px;padding:0 4px;margin-top:4px;cursor:pointer}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -106,11 +122,16 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 <div class="wrap">
 <header>
   <h1>Curator</h1>
-  <button class="pill" id="tv" aria-label="TV status. Tap to switch the demo TV on or off."><span class="dot"></span><span id="tvtxt">Frame online · Art Mode</span></button>
+  <button class="pill" id="tv"><span class="dot" aria-hidden="true"></span><span id="tvtxt">TV is on</span></button>
 </header>
 
 <main>
 <section id="add">
+  <div class="card namecard" id="askname" hidden>
+    <p><b>What is your name?</b><span>Curator shows it next to photos you choose.</span></p>
+    <form id="asknameform"><input class="text" id="asknamein" type="text" maxlength="30" placeholder="For example Tom" autocomplete="given-name" aria-label="Your name"><button class="btn primary" type="submit">Save</button></form>
+    <button class="link" id="asknameskip" type="button">Skip</button>
+  </div>
   <div class="callout" id="homehint" role="note" hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M12 8v6M9 11h6"/></svg>
     <div><p><b>Tip: put Curator on your home screen.</b></p><p>Then you can open it with one tap. <a href="#" id="homehow">Show me how</a></p></div>
@@ -124,7 +145,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
     </div>
   </div>
   <div class="drop" id="drop">
-    <strong>Add photos to your Frame</strong>
+    <strong>Add photos to the TV</strong>
     Pick from your camera roll or files.
     <button class="btn primary" id="choose">Choose photos</button>
     <input id="file" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
@@ -144,9 +165,17 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 </section>
 
 <section id="library" hidden>
-  <h2>On your Frame</h2>
-  <div class="grid" id="grid"></div>
-  <p class="note">Tap a photo to choose it. The TV shows one photo at a time. You can remove only the photos you added with Curator.</p>
+  <div class="callout" id="artoff" role="status" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    <div><p><b>The TV is off.</b></p><p>This is the last list Curator saw. Photos you send will go to the TV when it is on.</p></div>
+  </div>
+  <div class="empty" id="arterr" hidden></div>
+  <div id="lib">
+    <div id="nowbox"><h2>Now showing</h2><div id="now"></div></div>
+    <div id="minebox"><h2>Your photos</h2><div class="grid" id="gmine"></div><p class="nonote" id="nomine" hidden>Photos you add with Curator show up here.</p></div>
+    <div id="sambox"><h2>Samsung art</h2><div class="grid" id="gsam"></div></div>
+  </div>
+  <p class="note" id="libnote">Tap a photo to choose it. The TV shows one photo at a time. You can remove only the photos you added with Curator.</p>
 </section>
 
 <section id="queue" hidden>
@@ -218,7 +247,8 @@ $$('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 async function api(path,opt){const r=await fetch(path,opt);let j={};try{j=await r.json()}catch(e){}return{ok:r.ok,status:r.status,json:j}}
 
 // TV status pill. In development with a fake TV, tapping it switches the fake TV on or off.
-function renderTv(){$('#tv').classList.toggle('off',!tvOnline);$('#tvtxt').textContent=tvOnline?'Frame online · Art Mode':'TV is off · will retry'}
+function renderTv(){const t=$('#tv');t.classList.toggle('off',!tvOnline);t.classList.toggle('fake',fake);$('#tvtxt').textContent=tvOnline?'TV is on':'TV is off';
+  t.setAttribute('aria-label',(tvOnline?'TV is on.':'TV is off.')+(fake?' Tap to switch the pretend TV '+(tvOnline?'off.':'on.'):''))}
 $('#tv').onclick=async()=>{if(!fake)return;await api('/api/dev/tv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({online:!tvOnline})});await loadStatus();loadArt()};
 
 $('#choose').onclick=$('#more').onclick=()=>$('#file').click();
@@ -269,9 +299,15 @@ function sendOne(it,m,showNow){const u={id:++uid,name:'Photo',url:it.url,p:0,sta
 $('#shownow').onchange=()=>{$('#shownote').textContent=$('#shownow').checked?'On: the last photo you send is shown on the TV when it arrives.':'Off: the photo is added and the TV keeps showing what it shows now.'};
 $('#send').onclick=()=>{const batch=items,show=$('#shownow').checked;items=[];adjusting=null;batch.forEach((it,i)=>sendOne(it,mode,show&&i===batch.length-1));tab('queue')};
 $('#myname').value=myName;
-$('#myname').oninput=e=>{myName=e.target.value.trim().slice(0,30);try{localStorage.setItem('curator-name',myName)}catch(x){}};
+$('#myname').oninput=e=>{myName=e.target.value.trim().slice(0,30);try{localStorage.setItem('curator-name',myName)}catch(x){}if(myName)$('#askname').hidden=true};
+// Ask for a name once, on the first visit.
+let nameSkipped=false;try{nameSkipped=localStorage.getItem('curator-name-skip')==='1'}catch(e){}
+$('#askname').hidden=!!myName||nameSkipped;
+$('#asknameform').onsubmit=e=>{e.preventDefault();const v=$('#asknamein').value.trim().slice(0,30);if(!v){$('#asknamein').focus();return}
+  myName=v;$('#myname').value=v;try{localStorage.setItem('curator-name',v)}catch(x){}$('#asknamein').blur();$('#askname').hidden=true};
+$('#asknameskip').onclick=()=>{try{localStorage.setItem('curator-name-skip','1')}catch(e){}$('#askname').hidden=true};
 
-const label={uploading:['Uploading','warn'],waiting:['Waiting for TV','warn'],sending:['Sending…','warn'],done:['On the TV','ok'],failed:['Failed','bad']};
+const label={uploading:['Uploading','warn'],waiting:['Waiting for the TV','warn'],sending:['Sending…','warn'],done:['On the TV','ok'],failed:['Failed','bad']};
 const timeOf=s=>new Date(s*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 const whenOf=s=>{const d=new Date(s*1000),now=new Date();return d.toDateString()===now.toDateString()?timeOf(s):d.toLocaleDateString([],{month:'short',day:'numeric'})+', '+timeOf(s)};
 function renderJobs(){
@@ -291,20 +327,36 @@ function renderJobs(){
   const open=rows.filter(j=>j.state!=='done'&&j.state!=='failed').length;$('#qn').textContent=open?` (${open})`:'';
 }
 
+function openArt(a){sel=a;$('#sart').style.cssText=`background:var(--surface2) url(${a.thumb}) center/cover`;$('#stitle').textContent=a.name;$('#del').hidden=!a.mine;$('#show').hidden=a.current;$('#show').textContent=a.queued?'Show on TV (already queued)':'Show on TV';
+  const w=$('#swho');w.hidden=!a.current;w.textContent=a.current?(a.chosen_by?`Showing now. Chosen by ${a.chosen_by} at ${timeOf(a.chosen_at)}.`:'Showing now.'):'';$('#snote').hidden=a.mine;openSheet()}
+function tile(a,stale){const b=document.createElement('button');b.className='tile';b.disabled=stale;
+  b.innerHTML=`<span class="art" style="background-image:url(${esc(a.thumb)});background-position:center;background-size:cover"></span>${a.current?'<span class="badge">Showing</span>':a.queued?'<span class="badge q">Queued</span>':''}<small><b>${esc(a.name)}</b>${a.mine?'Your photo':'Samsung art'}</small>`;
+  b.onclick=()=>openArt(a);return b}
 function renderLib(){
-  const g=$('#grid');g.innerHTML='';
-  if(artError){g.innerHTML=`<div class="empty" style="grid-column:1/-1">${esc(artError)}</div>`;return}
-  art.forEach(a=>{const b=document.createElement('button');b.className='tile';
-    b.innerHTML=`<span class="art" style="background:url(${esc(a.thumb)}) center/cover"></span>${a.current?'<span class="badge">Showing</span>':a.queued?'<span class="badge q">Queued</span>':''}<small><b>${esc(a.name)}</b>${a.mine?'Your photo':'Samsung art'}${a.current&&a.chosen_by?`<br>Chosen by ${esc(a.chosen_by)}`:''}</small>`;
-    b.onclick=()=>{sel=a;$('#sart').style.cssText=`background:url(${a.thumb}) center/cover`;$('#stitle').textContent=a.name;$('#del').hidden=!a.mine;$('#show').hidden=a.current;$('#show').textContent=a.queued?'Show on TV (already queued)':'Show on TV';
-      const w=$('#swho');w.hidden=!a.current;w.textContent=a.current?(a.chosen_by?`Showing now. Chosen by ${a.chosen_by} at ${timeOf(a.chosen_at)}.`:'Showing now.'):'';$('#snote').hidden=a.mine;sheetMode(false);$('#sheet').classList.add('open')};g.append(b)});
+  // TV off with an earlier list: keep it, grayed out. TV off with no list: only the message.
+  const stale=!!artError&&art.length>0,none=!!artError&&!art.length;
+  $('#artoff').hidden=!stale;$('#arterr').hidden=!none;$('#arterr').textContent=none?artError:'';
+  const lib=$('#lib');lib.hidden=none;$('#libnote').hidden=none;lib.classList.toggle('stale',stale);lib.setAttribute('aria-disabled',stale);
+  if(stale&&$('#sheet').classList.contains('open'))closeSheet();
+  const cur=art.find(a=>a.current),mine=art.filter(a=>a.mine),sam=art.filter(a=>!a.mine);
+  $('#nowbox').hidden=!cur;$('#now').innerHTML='';
+  if(cur){const b=document.createElement('button');b.className='now';b.disabled=stale;
+    b.innerHTML=`<span class="art" style="background-image:url(${esc(cur.thumb)});background-position:center;background-size:cover"></span><span class="badge">Showing</span><span class="t"><b>${esc(cur.name)}</b><em>${cur.chosen_by?`Chosen by ${esc(cur.chosen_by)}`:cur.mine?'Your photo':'Samsung art'}</em></span>`;
+    b.onclick=()=>openArt(cur);$('#now').append(b)}
+  $('#gmine').innerHTML='';mine.forEach(a=>$('#gmine').append(tile(a,stale)));$('#nomine').hidden=mine.length>0;
+  $('#sambox').hidden=!sam.length;$('#gsam').innerHTML='';sam.forEach(a=>$('#gsam').append(tile(a,stale)));
 }
-function closeSheet(){$('#sheet').classList.remove('open');sheetMode(false)}
+// The photo sheet adds a history entry, so the Android Back button closes it.
+let sheetPushed=false;
+function openSheet(){sheetMode(false);$('#sheet').classList.add('open');if(!sheetPushed){try{history.pushState({curatorSheet:1},'');sheetPushed=true}catch(e){}}}
+function hideSheet(){$('#sheet').classList.remove('open');sheetMode(false)}
+function closeSheet(){hideSheet();if(sheetPushed){sheetPushed=false;history.back()}}
+window.addEventListener('popstate',()=>{if(sheetPushed){sheetPushed=false;hideSheet()}});
 function sheetMode(confirm){$('#sacts').hidden=confirm;$('#sconfirm').hidden=!confirm;if(confirm)$('#sconfirmtxt').textContent=`Remove “${sel.name}” from the TV? You cannot undo this.`}
 $('#close').onclick=closeSheet;
 $('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
 $('#delno').onclick=()=>sheetMode(false);
-$('#show').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({by:myName,name:sel.name})});loadStatus();loadArt()};
+$('#show').onclick=async()=>{closeSheet();await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({by:myName,name:sel.name})});loadStatus();loadArt()};
 $('#del').onclick=()=>sheetMode(true);
 $('#delyes').onclick=async()=>{closeSheet();await api(`/api/art/${encodeURIComponent(sel.id)}`,{method:'DELETE'});loadArt()};
 
