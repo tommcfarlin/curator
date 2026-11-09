@@ -47,6 +47,13 @@ h2{font-size:13px;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-
 .tile .art{aspect-ratio:16/9;display:block;width:100%}
 .tile small{display:block;padding:8px 10px;color:var(--muted);font-size:13px}
 .badge{position:absolute;top:8px;left:8px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:15px;cursor:pointer}
+.switch small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.switch input{width:51px;height:31px;appearance:none;-webkit-appearance:none;border-radius:999px;background:var(--surface2);position:relative;flex:none;cursor:pointer;transition:background .2s;margin:0}
+.switch input::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0004;transition:transform .2s}
+.switch input:checked{background:var(--ok)}.switch input:checked::after{transform:translateX(20px)}
+.text{width:100%;min-height:48px;border:0;border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:16px;padding:0 14px}
+.badge.q{background:var(--warn);color:#fff}
 .row{display:flex;align-items:center;gap:12px;background:var(--surface);border:0;border-radius:12px;padding:10px;margin:8px 0}
 .row .art{width:72px;aspect-ratio:16/9;border-radius:6px;flex:none}
 .row .t{flex:1;min-width:0}.row .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}.row .t span{font-size:13px;color:var(--muted)}
@@ -100,6 +107,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
       <button aria-pressed="false" data-mode="fit">Show whole photo</button>
     </div>
     <p class="note" id="modenote">Fill screen trims the edges. Drag a photo to choose what stays.</p>
+    <label class="switch"><span>Show on the TV right away<small id="shownote">Off: the photo is added and the TV keeps showing what it shows now.</small></span><input type="checkbox" id="shownow"></label>
     <div id="cards"></div>
     <button class="btn primary" id="send">Send to Frame</button>
     <button class="btn" id="more" style="margin-top:10px">Add more photos</button>
@@ -109,7 +117,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 <section id="library" hidden>
   <h2>On your Frame</h2>
   <div class="grid" id="grid"></div>
-  <p class="note">Tap a photo to show it now. You can remove only the photos you added with Curator.</p>
+  <p class="note">Tap a photo to choose it. The TV shows one photo at a time. You can remove only the photos you added with Curator.</p>
 </section>
 
 <section id="queue" hidden>
@@ -117,6 +125,9 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
   <div id="jobs"></div>
 </section>
 <section id="settings" hidden>
+  <h2>Your name</h2>
+  <input class="text" id="myname" type="text" maxlength="30" placeholder="For example Tom" autocomplete="given-name" aria-label="Your name">
+  <p class="note">Curator shows your name next to the photo you choose for the TV. It is only a label. There is no login.</p>
   <h2>Appearance</h2>
   <div class="seg three" role="group" aria-label="Appearance" id="theme">
     <button data-theme-pick="system" aria-pressed="true">System</button>
@@ -132,7 +143,8 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
   <div class="art" id="sart"></div>
   <b id="stitle"></b>
   <p class="note" id="snote" hidden>This is Samsung art. Curator can show it but cannot remove it. Use the TV to remove it.</p>
-  <button class="btn primary" id="show">Show now</button>
+  <p class="note" id="swho" hidden></p>
+  <button class="btn primary" id="show">Show on TV</button>
   <button class="btn danger" id="del">Remove from Frame</button>
   <button class="btn" id="close">Cancel</button>
 </div></div>
@@ -147,6 +159,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let myName='';try{myName=localStorage.getItem('curator-name')||''}catch(e){}
 let mode='crop', items=[], uploads=[], jobs=[], art=[], artError='', tvOnline=true, fake=false, sel=null, uid=0;
 
 function tab(t){$$('main>section').forEach(s=>s.hidden=s.id!==t);$$('nav button').forEach(b=>b.dataset.tab===t?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));if(t==='library')loadArt();render()}
@@ -192,23 +205,28 @@ function renderAdd(){
 }
 
 // Upload one photo with progress. The server prepares it and queues it for the TV.
-function sendOne(it,m){const u={id:++uid,name:it.f.name,url:it.url,p:0,state:'uploading',error:''};uploads.unshift(u);
-  const fd=new FormData();fd.append('file',it.f);fd.append('mode',m);fd.append('fx',it.x);fd.append('fy',it.y);
+function sendOne(it,m,showNow){const u={id:++uid,name:it.f.name,url:it.url,p:0,state:'uploading',error:''};uploads.unshift(u);
+  const fd=new FormData();fd.append('file',it.f);fd.append('mode',m);fd.append('fx',it.x);fd.append('fy',it.y);if(showNow)fd.append('show_now','1');if(myName)fd.append('by',myName);
   const x=new XMLHttpRequest();x.open('POST','/api/upload');
   x.upload.onprogress=e=>{if(e.lengthComputable){u.p=Math.round(e.loaded/e.total*100);renderJobs()}};
   x.onload=()=>{let j={};try{j=JSON.parse(x.responseText)}catch(e){}
     if(x.status===201){uploads=uploads.filter(v=>v!==u);loadStatus()}else{u.state='failed';u.error=j.message||'Upload failed.';render()}};
   x.onerror=()=>{u.state='failed';u.error='Could not reach Curator. Check your Wi-Fi.';render()};
   x.send(fd)}
-$('#send').onclick=()=>{const batch=items;items=[];batch.forEach(it=>sendOne(it,mode));tab('queue')};
+$('#shownow').onchange=()=>{$('#shownote').textContent=$('#shownow').checked?'On: the last photo you send is shown on the TV when it arrives.':'Off: the photo is added and the TV keeps showing what it shows now.'};
+$('#send').onclick=()=>{const batch=items,show=$('#shownow').checked;items=[];batch.forEach((it,i)=>sendOne(it,mode,show&&i===batch.length-1));tab('queue')};
+$('#myname').value=myName;
+$('#myname').oninput=e=>{myName=e.target.value.trim().slice(0,30);try{localStorage.setItem('curator-name',myName)}catch(x){}};
 
 const label={uploading:['Uploading','warn'],waiting:['Waiting for TV','warn'],sending:['Sending…','warn'],done:['On the TV','ok'],failed:['Failed','bad']};
+const timeOf=s=>new Date(s*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 function renderJobs(){
   const rows=[...uploads.map(u=>({...u,local:true})),...jobs];
   $('#jobs').innerHTML=rows.length?'':'<div class="empty">Nothing yet. Photos you send show up here.</div>';
-  rows.forEach(j=>{const [t,c]=label[j.state]||[j.state,''];const r=document.createElement('div');r.className='row';
-    const sub=j.local?(j.state==='failed'?j.error:j.p+'%'):j.state==='waiting'?'The TV is off. Curator keeps trying.':j.state==='failed'?(j.error||'Curator gave up.'):'';
-    r.innerHTML=`<span class="art" style="background:url(${esc(j.url||j.thumb)}) center/cover"></span><div class="t"><b>${esc(j.name)}</b><span>${esc(sub)}</span></div>${j.state==='failed'&&!j.local?'<button class="chip bad retry">Retry</button>':`<span class="chip ${c}">${t}</span>`}`;
+  rows.forEach(j=>{let [t,c]=label[j.state]||[j.state,''];if(j.kind==='show'&&j.state==='done')t='Showing';const r=document.createElement('div');r.className='row';
+    const show=j.kind==='show',who=j.by?` · ${j.by}`:'';
+    const sub=j.local?(j.state==='failed'?j.error:j.p+'%'):j.state==='waiting'?'The TV is off. Curator keeps trying.':j.state==='failed'?(j.error||'Curator gave up.'):show?`Choose for the TV${who}`:(j.show_now?(j.state==='done'?`Shown on the TV${who}`:`Will show on the TV${who}`):`Added${who}`);
+    r.innerHTML=`<span class="art" style="background:url(${esc(j.url||j.thumb)}) center/cover"></span><div class="t"><b>${esc(show?'Show: '+j.name:j.name)}</b><span>${esc(sub)}</span></div>${j.state==='failed'&&!j.local?'<button class="chip bad retry">Retry</button>':`<span class="chip ${c}">${t}</span>`}`;
     const rb=r.querySelector('.retry');if(rb)rb.onclick=async()=>{await api(`/api/jobs/${j.id}/retry`,{method:'POST'});loadStatus()};
     $('#jobs').append(r)});
   const open=rows.filter(j=>j.state!=='done'&&j.state!=='failed').length;$('#qn').textContent=open?` (${open})`:'';
@@ -218,11 +236,12 @@ function renderLib(){
   const g=$('#grid');g.innerHTML='';
   if(artError){g.innerHTML=`<div class="empty" style="grid-column:1/-1">${esc(artError)}</div>`;return}
   art.forEach(a=>{const b=document.createElement('button');b.className='tile';
-    b.innerHTML=`<span class="art" style="background:url(${esc(a.thumb)}) center/cover"></span>${a.current?'<span class="badge">Showing</span>':''}<small>${esc(a.name)}${a.mine?'':' · Samsung'}</small>`;
-    b.onclick=()=>{sel=a;$('#sart').style.cssText=`background:url(${a.thumb}) center/cover`;$('#stitle').textContent=a.name;$('#del').hidden=!a.mine;$('#snote').hidden=a.mine;$('#sheet').classList.add('open')};g.append(b)});
+    b.innerHTML=`<span class="art" style="background:url(${esc(a.thumb)}) center/cover"></span>${a.current?'<span class="badge">Showing</span>':a.queued?'<span class="badge q">Queued</span>':''}<small>${esc(a.name)}${a.mine?'':' · Samsung'}${a.current&&a.chosen_by?`<br>Chosen by ${esc(a.chosen_by)}, ${timeOf(a.chosen_at)}`:''}</small>`;
+    b.onclick=()=>{sel=a;$('#sart').style.cssText=`background:url(${a.thumb}) center/cover`;$('#stitle').textContent=a.name;$('#del').hidden=!a.mine;$('#show').hidden=a.current;$('#show').textContent=a.queued?'Show on TV (already queued)':'Show on TV';
+      const w=$('#swho');w.hidden=!a.current;w.textContent=a.current?(a.chosen_by?`Showing now. Chosen by ${a.chosen_by} at ${timeOf(a.chosen_at)}.`:'Showing now.'):'';$('#snote').hidden=a.mine;$('#sheet').classList.add('open')};g.append(b)});
 }
 $('#close').onclick=()=>$('#sheet').classList.remove('open');
-$('#show').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST'});loadArt()};
+$('#show').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({by:myName,name:sel.name})});loadStatus();loadArt()};
 $('#del').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}`,{method:'DELETE'});loadArt()};
 
 async function loadStatus(){try{const r=await api('/api/status');if(r.ok){jobs=r.json.jobs;tvOnline=r.json.tv_online;fake=r.json.fake;renderTv();renderJobs()}}catch(e){}}

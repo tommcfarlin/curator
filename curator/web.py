@@ -48,6 +48,11 @@ def create_app(
         if worker:
             worker.wake()
 
+    def who(raw) -> str | None:
+        """A name typed on the phone. It is only a label, never a login."""
+        s = " ".join(str(raw or "").split())[:30]
+        return s or None
+
     def err(code: int, key: str, message: str):
         return jsonify(error=key, message=message), code
 
@@ -96,7 +101,8 @@ def create_app(
             return err(400, "bad_image", "That file is not a photo that Curator can read.")
         finally:
             incoming.unlink(missing_ok=True)
-        job_id = queue.enqueue(prepared, label)
+        show_now = request.form.get("show_now", "").lower() in ("1", "true", "yes", "on")
+        job_id = queue.enqueue(prepared, label, show_now=show_now, by=who(request.form.get("by")))
         if worker:
             worker.wake()
         return jsonify(job=job_id, name=label), 201
@@ -109,9 +115,10 @@ def create_app(
                 state = "waiting" if j.attempts else "sending"
             else:
                 state = j.status
+            thumb = f"/api/art/{j.target}/thumb" if j.kind == "show" else f"/thumb/{Path(j.path).stem}"
             jobs.append(dict(
                 id=j.id, name=j.name, state=state, attempts=j.attempts, error=j.last_error,
-                thumb=f"/thumb/{Path(j.path).stem}",
+                thumb=thumb, kind=j.kind, show_now=bool(j.show_now), by=j.by,
             ))
         return jsonify(tv_online=tv_online(), fake=isinstance(tv, FakeTV), jobs=jobs)
 
@@ -134,12 +141,18 @@ def create_app(
         for p in library.list_pieces():
             if p.content_id not in live:
                 library.remove(p.content_id)  # deleted on the TV itself
+        mark = library.get_mark()
+        waiting = queue.pending_show_target()
         out = []
         for i in items:
             piece = library.get(i.id)
+            chosen = mark if (mark and mark.content_id == i.id and i.current) else None
             out.append(dict(
                 id=i.id, name=(piece.name if piece else i.name) or i.id,
                 mine=piece is not None, current=i.current, thumb=f"/api/art/{i.id}/thumb",
+                chosen_by=chosen.by if chosen else None,
+                chosen_at=chosen.at if chosen else None,
+                queued=(waiting == i.id),
             ))
         return jsonify(art=out)
 
@@ -158,13 +171,14 @@ def create_app(
 
     @app.post("/api/art/<cid>/show")
     def art_show(cid: str):
-        try:
-            tv.select(cid)
-        except TVUnavailable:
-            return err(503, "tv_off", "The TV is off or cannot be reached.")
-        except KeyError:
-            return err(404, "not_found", "No such artwork.")
-        return jsonify(ok=True)
+        """Choose the photo the TV shows. It goes through the queue, so a TV that is off still works."""
+        body = request.get_json(silent=True) or {}
+        piece = library.get(cid)
+        name = piece.name if piece else (str(body.get("name") or "")[:60] or cid)
+        job_id = queue.enqueue_show(cid, name, by=who(body.get("by")))
+        if worker:
+            worker.wake()
+        return jsonify(job=job_id), 202
 
     @app.delete("/api/art/<cid>")
     def art_delete(cid: str):

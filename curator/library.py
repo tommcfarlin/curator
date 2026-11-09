@@ -17,6 +17,13 @@ class Piece:
     created_at: float
 
 
+@dataclass(frozen=True)
+class Mark:
+    content_id: str
+    by: Optional[str]
+    at: float
+
+
 class Library:
     def __init__(self, db_path: str | Path):
         self._lock = threading.RLock()
@@ -30,7 +37,26 @@ class Library:
                     content_id TEXT PRIMARY KEY, name TEXT NOT NULL,
                     thumb_path TEXT, created_at REAL NOT NULL)"""
             )
+            self.db.execute(
+                """CREATE TABLE IF NOT EXISTS mark (
+                    id INTEGER PRIMARY KEY CHECK (id = 1), content_id TEXT NOT NULL,
+                    by TEXT, at REAL NOT NULL)"""
+            )
             self.db.commit()
+
+    def set_mark(self, content_id: str, by: Optional[str] = None) -> None:
+        """Record that someone chose this photo to show. Only one is chosen at a time."""
+        with self._lock:
+            self.db.execute(
+                "INSERT OR REPLACE INTO mark (id, content_id, by, at) VALUES (1, ?, ?, ?)",
+                (content_id, by, time.time()),
+            )
+            self.db.commit()
+
+    def get_mark(self) -> Optional[Mark]:
+        with self._lock:
+            row = self.db.execute("SELECT content_id, by, at FROM mark WHERE id=1").fetchone()
+        return Mark(**dict(row)) if row else None
 
     def add(self, content_id: str, name: str, thumb_path: str | Path | None = None) -> None:
         with self._lock:

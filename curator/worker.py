@@ -17,13 +17,16 @@ def process_one(queue: RetryQueue, tv: TV, library: Library, thumbs_dir: Path) -
     job = queue.next_due()
     if job is None:
         return False
+    if job.kind == "show":
+        return _show(queue, tv, library, job)
     path = Path(job.path)
     if not path.exists():
         queue.mark_failed(job.id, "The prepared image file is missing.")
         return True
     try:
         content_id = tv.upload(path)
-        tv.select(content_id)
+        if job.show_now:
+            tv.select(content_id)
     except TVUnavailable as exc:
         queue.mark_failed_attempt(job.id, str(exc))
         return False
@@ -32,6 +35,27 @@ def process_one(queue: RetryQueue, tv: TV, library: Library, thumbs_dir: Path) -
         queue.mark_failed_attempt(job.id, f"{type(exc).__name__}: {exc}")
         return False
     library.add(content_id, job.name or path.stem, thumbs_dir / path.name)
+    if job.show_now:
+        library.set_mark(content_id, job.by)
+    queue.mark_done(job.id)
+    return True
+
+
+def _show(queue: RetryQueue, tv: TV, library: Library, job) -> bool:
+    """Tell the TV to show a photo that is already on it."""
+    try:
+        tv.select(job.target)
+    except KeyError:
+        queue.mark_failed(job.id, "That photo is no longer on the TV.")
+        return True
+    except TVUnavailable as exc:
+        queue.mark_failed_attempt(job.id, str(exc))
+        return False
+    except Exception as exc:
+        log.exception("show failed")
+        queue.mark_failed_attempt(job.id, f"{type(exc).__name__}: {exc}")
+        return False
+    library.set_mark(job.target, job.by)
     queue.mark_done(job.id)
     return True
 

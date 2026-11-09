@@ -8,7 +8,7 @@ The TV is a 2021 The Frame, model QN55LS03AAFXZA, Tizen 6.0, at 192.168.1.20.
 
 ## Status
 
-Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac and pass 48 tests. The real TV client (`curator/tv.py`, class for `samsungtvws`) is not written. Nothing in this project has connected to the TV. The Pi has SSH access but no Curator code.
+Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac and pass 63 tests. The real TV client (`SamsungTV` in `curator/tv.py`, for `samsungtvws`) is written and tested with a fake connection. Nothing in this project has connected to the TV. The Pi has SSH access but no Curator code.
 
 Plan: (1) build and test on the Mac with the fake TV (done), (2) one supervised check against the real TV, (3) deploy to the Pi with systemd, (4) switch the Pi to the real TV.
 
@@ -87,6 +87,17 @@ The web app is the main way to add photos. It must work in Safari on iPhone and 
 - Upload limit: 25 MB per file. Phone photos are usually 2 to 8 MB.
 - The server checks every upload with Pillow before it accepts the file. It never uses the file name from the phone. It makes its own.
 - No login in version 1. Home network only. A shared PIN is a possible later addition.
+
+## Choosing the photo that the TV shows
+
+The TV shows one photo at a time. Two people can share the app, so a new upload never takes over the screen unless the person asks.
+
+- The Add screen has a switch, "Show on the TV right away". It is off by default. In a batch, only the last photo gets the flag.
+- In "On the TV", a person taps a photo and chooses "Show on TV". The request goes into the retry queue as a "show" job, so a TV that is off still gets it later.
+- The last request wins. A new "show" job removes older waiting "show" jobs and clears `show_now` on waiting uploads.
+- The `mark` table holds one row: which photo was chosen, by whom, and when. The name comes from a field in Settings and is kept in the phone. It is only a label, not a login.
+- The TV decides which photo is current. A tile says "Showing" only when the TV reports it as current. A tile says "Chosen by" only when the mark matches.
+- Samsung art can be chosen too. Only photos that Curator added can be removed.
 
 ## Watched folder
 

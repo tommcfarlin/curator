@@ -84,3 +84,18 @@ def test_counts():
     q.enqueue("b.jpg")
     q.mark_done(j)
     assert q.counts() == {PENDING: 1, DONE: 1, FAILED: 0}
+
+
+def test_old_database_gets_new_columns(tmp_path):
+    import sqlite3
+    db = tmp_path / "old.sqlite3"
+    c = sqlite3.connect(db)
+    c.execute("""CREATE TABLE jobs (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT NOT NULL,
+        name TEXT, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0,
+        next_attempt_at REAL NOT NULL, last_error TEXT, created_at REAL NOT NULL DEFAULT 0)""")
+    c.execute("INSERT INTO jobs (path, next_attempt_at) VALUES ('x', 0)")
+    c.commit()
+    c.close()
+    q = RetryQueue(db)
+    job = q.next_due()
+    assert job.kind == "upload" and job.show_now == 0 and job.by is None

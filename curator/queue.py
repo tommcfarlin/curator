@@ -26,6 +26,10 @@ class Job:
     next_attempt_at: float
     last_error: Optional[str]
     created_at: float
+    kind: str = "upload"  # "upload" sends a photo. "show" tells the TV to show one.
+    show_now: int = 0  # for uploads: show the photo once it is on the TV
+    target: Optional[str] = None  # for "show" jobs: the content id
+    by: Optional[str] = None  # who asked (a name typed on the phone, no login)
 
 
 class RetryQueue:
@@ -58,13 +62,23 @@ class RetryQueue:
                     last_error TEXT,
                     created_at REAL NOT NULL DEFAULT 0)"""
             )
+            have = {r["name"] for r in self.db.execute("PRAGMA table_info(jobs)")}
+            for col, ddl in (
+                ("kind", "TEXT NOT NULL DEFAULT 'upload'"),
+                ("show_now", "INTEGER NOT NULL DEFAULT 0"),
+                ("target", "TEXT"),
+                ("by", "TEXT"),
+            ):
+                if col not in have:
+                    self.db.execute(f'ALTER TABLE jobs ADD COLUMN "{col}" {ddl}')
             self.db.commit()
 
     @staticmethod
     def _job(row: sqlite3.Row) -> Job:
         return Job(**{k: row[k] for k in row.keys()})
 
-    def enqueue(self, path: str | Path, name: Optional[str] = None) -> int:
+    def enqueue(self, path: str | Path, name: Optional[str] = None,
+                show_now: bool = False, by: Optional[str] = None) -> int:
         """Add a job, or return the id of an open job for the same path."""
         with self._lock:
             row = self.db.execute(
@@ -74,11 +88,41 @@ class RetryQueue:
                 return row["id"]
             now = self.clock()
             cur = self.db.execute(
-                "INSERT INTO jobs (path, name, next_attempt_at, created_at) VALUES (?, ?, ?, ?)",
-                (str(path), name, now, now),
+                'INSERT INTO jobs (path, name, next_attempt_at, created_at, show_now, "by") '
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (str(path), name, now, now, int(show_now), by),
             )
             self.db.commit()
             return cur.lastrowid
+
+    def enqueue_show(self, content_id: str, name: Optional[str] = None,
+                     by: Optional[str] = None) -> int:
+        """Ask the TV to show one photo. The last request wins.
+
+        Older waiting requests are removed. Waiting uploads lose their
+        show_now flag, so they cannot replace this choice later.
+        """
+        with self._lock:
+            self.db.execute("DELETE FROM jobs WHERE kind='show' AND status=?", (PENDING,))
+            self.db.execute(
+                "UPDATE jobs SET show_now=0 WHERE kind='upload' AND status=?", (PENDING,)
+            )
+            now = self.clock()
+            cur = self.db.execute(
+                'INSERT INTO jobs (path, name, next_attempt_at, created_at, kind, target, "by") '
+                "VALUES (?, ?, ?, ?, 'show', ?, ?)",
+                (f"show:{content_id}", name, now, now, content_id, by),
+            )
+            self.db.commit()
+            return cur.lastrowid
+
+    def pending_show_target(self) -> Optional[str]:
+        with self._lock:
+            row = self.db.execute(
+                "SELECT target FROM jobs WHERE kind='show' AND status=? ORDER BY id DESC LIMIT 1",
+                (PENDING,),
+            ).fetchone()
+        return row["target"] if row else None
 
     def get(self, job_id: int) -> Job:
         with self._lock:

@@ -77,7 +77,7 @@ def test_art_list_marks_mine_vs_samsung(env):
     run_worker(env)
     art = env.client.get("/api/art").json["art"]
     mine = [a for a in art if a["mine"]]
-    assert len(art) == 4 and len(mine) == 1 and mine[0]["name"] == "mine" and mine[0]["current"]
+    assert len(art) == 4 and len(mine) == 1 and mine[0]["name"] == "mine" and not mine[0]["current"]
     assert all(not a["mine"] for a in art if a["id"].startswith("SAM-"))
 
 
@@ -96,16 +96,46 @@ def test_can_delete_own_art_and_unknown_id_is_refused(env):
     assert env.client.delete("/api/art/nope").status_code == 403
 
 
-def test_show_changes_current_piece(env):
-    assert env.client.post("/api/art/SAM-2/show").status_code == 200
-    assert [a for a in env.client.get("/api/art").json["art"] if a["current"]][0]["id"] == "SAM-2"
-    assert env.client.post("/api/art/zzz/show").status_code == 404
+def current(env):
+    return [a for a in env.client.get("/api/art").json["art"] if a["current"]][0]
+
+
+def test_show_is_queued_then_changes_current_piece(env):
+    r = env.client.post("/api/art/SAM-2/show", json={"by": "  Anna  "})
+    assert r.status_code == 202
+    art = {a["id"]: a for a in env.client.get("/api/art").json["art"]}
+    assert art["SAM-2"]["queued"] is True and art["SAM-1"]["current"] is True
+    run_worker(env)
+    c = current(env)
+    assert c["id"] == "SAM-2" and c["chosen_by"] == "Anna" and c["chosen_at"]
+    assert c["queued"] is False
+    assert sum(a["current"] for a in env.client.get("/api/art").json["art"]) == 1
+
+
+def test_upload_does_not_take_over_unless_asked(env):
+    post(env)
+    run_worker(env)
+    assert current(env)["id"] == "SAM-1"
+    post(env, show_now="1", by="Tom")
+    run_worker(env)
+    c = current(env)
+    assert c["mine"] and c["chosen_by"] == "Tom"
+
+
+def test_show_for_missing_photo_ends_as_failed_job(env):
+    assert env.client.post("/api/art/zzz/show").status_code == 202
+    run_worker(env)
+    job = env.client.get("/api/status").json["jobs"][0]
+    assert job["state"] == "failed" and job["kind"] == "show"
 
 
 def test_tv_off_gives_503_for_art_calls(env):
     env.tv.online = False
     assert env.client.get("/api/art").status_code == 503
-    assert env.client.post("/api/art/SAM-1/show").status_code == 503
+    assert env.client.post("/api/art/SAM-1/show").status_code == 202  # waits in the queue
+    run_worker(env)
+    job = env.client.get("/api/status").json["jobs"][0]
+    assert job["state"] == "waiting" and job["kind"] == "show"
 
 
 def test_art_deleted_on_tv_is_forgotten(env):
