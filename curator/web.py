@@ -28,6 +28,7 @@ STATIC_FILES = {
     "icon-192.png": "image/png",
     "icon-512.png": "image/png",
     "icon-maskable-512.png": "image/png",
+    "favicon.png": "image/png",
 }
 CAMERA_NAME = re.compile(r"^(img|dsc|dscn|dcim|pxl|mvimg|image|photo|screenshot|picture|p)[\s_-]*[\d_ -]*$", re.I)
 

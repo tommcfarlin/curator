@@ -162,7 +162,7 @@ def test_thumb_route_rejects_bad_stem(env):
 def test_home_screen_files_are_served(env):
     r = env.client.get("/manifest.webmanifest")
     assert r.status_code == 200 and r.json["name"] == "Curator"
-    for name in ("apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
+    for name in ("apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "favicon.png"):
         r = env.client.get(f"/{name}")
         assert r.status_code == 200 and r.mimetype == "image/png"
     assert env.client.get("/index.html").status_code == 404  # only listed files

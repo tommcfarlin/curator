@@ -1,35 +1,50 @@
-"""Draw the app icons into curator/static. Run: python tools/make_icons.py curator/static"""
+"""Draw the app icons into curator/static. Run on a Mac: python tools/make_icons.py curator/static
+
+The icon is the framed picture emoji, U+1F5BC, from the Apple Color Emoji font.
+Apple's emoji art is licensed for use on Apple devices. That is fine for a private
+home app. Before the repo goes public, draw the same icon from Twemoji (CC BY 4.0)
+or Noto Emoji (Apache 2.0) instead.
+"""
 import sys
 from pathlib import Path
-from PIL import Image, ImageDraw
-out = Path(sys.argv[1])
-def icon(n, pad_ratio=0.0):
+
+from PIL import Image, ImageDraw, ImageFont
+
+EMOJI = "\U0001F5BC️"
+FONT = "/System/Library/Fonts/Apple Color Emoji.ttc"
+BG_TOP, BG_BOTTOM = (255, 255, 255), (229, 229, 234)  # Apple system grays
+
+
+def emoji_image() -> Image.Image:
+    font = ImageFont.truetype(FONT, 160)  # the only size this bitmap font has
+    im = Image.new("RGBA", (240, 240), (0, 0, 0, 0))
+    ImageDraw.Draw(im).text((120, 120), EMOJI, font=font, embedded_color=True, anchor="mm")
+    return im.crop(im.getbbox())
+
+
+def icon(n: int, fill: float) -> Image.Image:
+    """A square icon. `fill` is the share of the width the emoji takes."""
     S = 1024
-    im = Image.new("RGB", (S, S), (28, 28, 30))
-    d = ImageDraw.Draw(im)
-    p = int(S * (0.16 + pad_ratio))
-    w = S - 2 * p
-    h = int(w * 9 / 16)
-    y0 = (S - h) // 2
-    # frame
-    d.rounded_rectangle([p, y0, p + w, y0 + h], radius=int(S * .03), fill=(245, 241, 232))
-    m = int(w * .07)
-    ix0, iy0, ix1, iy1 = p + m, y0 + m, p + w - m, y0 + h - m
-    # picture: sky gradient, sun, hills
-    for y in range(iy0, iy1):
-        t = (y - iy0) / (iy1 - iy0)
-        c = tuple(int(a + (b - a) * t) for a, b in zip((10, 132, 255), (255, 183, 120)))
-        d.line([(ix0, y), (ix1, y)], fill=c)
-    r = int((iy1 - iy0) * .16)
-    cx, cy = ix0 + int((ix1 - ix0) * .7), iy0 + int((iy1 - iy0) * .38)
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 236, 170))
-    d.polygon([(ix0, iy1), (ix0, iy0 + (iy1-iy0)*.62), (ix0 + (ix1-ix0)*.35, iy0 + (iy1-iy0)*.45),
-               (ix0 + (ix1-ix0)*.65, iy0 + (iy1-iy0)*.7), (ix1, iy0 + (iy1-iy0)*.55), (ix1, iy1)], fill=(36, 138, 61))
-    # stand
-    d.rounded_rectangle([S//2 - int(S*.09), y0 + h + int(S*.04), S//2 + int(S*.09), y0 + h + int(S*.065)],
-                        radius=int(S*.012), fill=(142, 142, 147))
-    return im.resize((n, n), Image.LANCZOS)
-icon(180).save(out / "apple-touch-icon.png")
-icon(192).save(out / "icon-192.png")
-icon(512).save(out / "icon-512.png")
-icon(512, pad_ratio=0.06).save(out / "icon-maskable-512.png")
+    bg = Image.new("RGB", (S, S))
+    d = ImageDraw.Draw(bg)
+    for y in range(S):
+        t = y / (S - 1)
+        d.line([(0, y), (S, y)], fill=tuple(round(a + (b - a) * t) for a, b in zip(BG_TOP, BG_BOTTOM)))
+    e = emoji_image()
+    w = int(S * fill)
+    h = round(e.height * w / e.width)
+    e = e.resize((w, h), Image.LANCZOS)
+    bg.paste(e, ((S - w) // 2, (S - h) // 2), e)
+    return bg.resize((n, n), Image.LANCZOS)
+
+
+def main(out: Path) -> None:
+    icon(180, 0.70).save(out / "apple-touch-icon.png")
+    icon(192, 0.70).save(out / "icon-192.png")
+    icon(512, 0.70).save(out / "icon-512.png")
+    icon(512, 0.56).save(out / "icon-maskable-512.png")  # Android crops this to a circle
+    icon(64, 0.84).save(out / "favicon.png")
+
+
+if __name__ == "__main__":
+    main(Path(sys.argv[1]))
