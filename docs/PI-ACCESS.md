@@ -79,4 +79,4 @@ Claude connects only after you give a clear yes in chat. Claude does not ask for
 | Disk | 914 GB, 2% used |
 | mDNS (`raspberrypi.local`) | running |
 | Reach the TV (ping) | yes, about 5 ms |
-| SSH key login | not set up yet (`~/.ssh/authorized_keys` missing) |
+| SSH key login | set up: key `~/.ssh/curator_pi` on the Mac, alias `curator-pi` |

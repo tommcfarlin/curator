@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import logging
 
 from . import config
@@ -23,6 +24,8 @@ def main(argv=None) -> int:
 
     s = config.load(args.config)
     if args.fake_tv:
+        # Keep pretend-TV data apart, so a photo queued in a test run can never reach the real TV.
+        s = dataclasses.replace(s, data_dir=s.data_dir / "fake-tv")
         tv = FakeTV()
     else:
         tv = SamsungTV(s.tv_host, s.tv_port, s.token_file, s.tv_name)

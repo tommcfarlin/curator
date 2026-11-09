@@ -44,18 +44,9 @@ python3 -m venv .venv
 .venv/bin/python -m pytest
 ```
 
-## Set up the Pi (planned)
+## Set up the Pi
 
-These steps are a plan. The Pi model, the OS and the SSH access are not known yet. Do not follow them until the service code is complete.
-
-1. Install Raspberry Pi OS and make sure that the Pi has Python 3.10 or newer.
-2. Copy this folder to `/opt/curator` on the Pi.
-3. Create the virtual environment and install the requirements.
-4. Copy `config/example.toml` to `config/local.toml`. Set the TV address.
-5. Start the service by hand once. The TV shows an Allow prompt. Approve it with the remote.
-6. Copy `deploy/curator.service` to `/etc/systemd/system/`. Edit the user and paths if needed.
-7. Run `sudo systemctl enable --now curator`.
-8. Open `http://raspberrypi.local:8080` on your phone.
+The steps are in [docs/DEPLOY.md](docs/DEPLOY.md). Do them after the first test on the real TV in [docs/TV-TEST.md](docs/TV-TEST.md).
 
 ## Secrets
 

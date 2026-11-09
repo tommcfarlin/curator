@@ -113,3 +113,34 @@ def test_full_app_flow_with_real_client(sim, tmp_path):
     assert c.get(f"/api/art/{cid}/thumb").status_code == 200
     assert c.delete(f"/api/art/{cid}").status_code == 200
     assert cid not in sim.frame.pieces
+
+
+def test_probe_steps_against_simulator(sim, tmp_path, capsys):
+    from curator import probe
+
+    cfg = tmp_path / "local.toml"
+    cfg.write_text(f'[tv]\nhost = "127.0.0.1"\nport = {sim.port}\ntoken_file = "{tmp_path}/token.txt"\n'
+                   f'[storage]\ndata_dir = "{tmp_path}/data"\n')
+    run = lambda *a: probe.main(["--config", str(cfg), *a])
+    assert run() == 0
+    out = capsys.readouterr().out
+    assert "Press Allow" in out and "Pieces on the TV: 3" in out and "MY-C0004 = 3" in out
+    assert (tmp_path / "token.txt").exists() and list((tmp_path / "data" / "probe").glob("*-list.json"))
+    assert run("--upload-test") == 0
+    out = capsys.readouterr().out
+    cid = out.split("Content id: ")[1].split()[0]
+    assert sim.frame.current != cid  # uploaded, not shown
+    assert run("--show", cid) == 0 and sim.frame.current == cid
+    assert run("--delete", cid) == 0 and cid not in sim.frame.pieces
+
+
+def test_probe_reports_tv_off(tmp_path, capsys):
+    from curator import probe
+
+    with SimTVServer() as srv:
+        port = srv.port
+    cfg = tmp_path / "local.toml"
+    cfg.write_text(f'[tv]\nhost = "127.0.0.1"\nport = {port}\ntoken_file = "{tmp_path}/t.txt"\n'
+                   f'[storage]\ndata_dir = "{tmp_path}/data"\n')
+    assert probe.main(["--config", str(cfg)]) == 1
+    assert "does not answer" in capsys.readouterr().out

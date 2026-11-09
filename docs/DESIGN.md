@@ -8,7 +8,7 @@ The TV is a 2021 The Frame, model QN55LS03AAFXZA, Tizen 6.0, at 192.168.1.20.
 
 ## Status
 
-Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac and pass 67 tests. The real TV client (`SamsungTV` in `curator/tv.py`, for `samsungtvws`) is written and tested with a fake connection. Nothing in this project has connected to the TV. The Pi has SSH access but no Curator code.
+Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac. The real TV client (`SamsungTV` in `curator/tv.py`) is tested end to end with the real `samsungtvws` library against a simulated Frame (`tests/sim_tv.py`). There are 78 tests. Nothing in this project has connected to the real TV yet. The next step is [TV-TEST.md](TV-TEST.md), then [DEPLOY.md](DEPLOY.md). The Pi has SSH access but no Curator code.
 
 Plan: (1) build and test on the Mac with the fake TV (done), (2) one supervised check against the real TV, (3) deploy to the Pi with systemd, (4) switch the Pi to the real TV.
 

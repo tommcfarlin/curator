@@ -1,4 +1,4 @@
-Pillow>=10
+Pillow>=10.1   # font_size in ImageDraw.text
 Flask>=3,<4
 waitress>=3
 segno>=1.6,<2   # BSD, draws the QR code
