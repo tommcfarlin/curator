@@ -27,6 +27,8 @@ button,input{font-family:inherit}
 .seg.three{grid-template-columns:repeat(3,1fr)}
 body{min-height:100dvh;padding:0 16px calc(84px + env(safe-area-inset-bottom))}
 .wrap{max-width:640px;margin:0 auto}
+main{padding-top:16px}
+main>section>h2:first-child{margin-top:0}
 header{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 0 10px;position:sticky;top:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);margin:0 -16px;padding-left:16px;padding-right:16px;z-index:5}
 h1{font:700 1.75rem/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",system-ui,sans-serif;margin:0;letter-spacing:-.4px}
 .pill{display:flex;gap:8px;align-items:center;border:0;background:var(--surface);color:var(--text);border-radius:999px;padding:8px 14px;font-size:.88rem;min-height:44px}
