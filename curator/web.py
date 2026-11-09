@@ -22,6 +22,7 @@ from .worker import Worker
 STATIC = Path(__file__).resolve().parent / "static"
 THUMB_SIZE = (480, 270)
 TV_CACHE_SECONDS = 5.0
+ART_CACHE_SECONDS = 20.0  # how long the art list from the TV is reused, unless something changed
 STATIC_FILES = {
     "manifest.webmanifest": "application/manifest+json",
     "apple-touch-icon.png": "image/png",
@@ -75,6 +76,29 @@ def create_app(
                     cache["value"] = False
                 cache["at"] = time.monotonic()
             return cache["value"]
+
+    art_cache = {"key": None, "at": 0.0, "items": None}
+    art_lock = threading.Lock()
+
+    def tv_art(fresh: bool = False):
+        """The TV's art list. Reused for a short time, so phones that poll do not
+        open a TV connection every few seconds. A finished job or a change made
+        here makes the next call ask the TV again."""
+        key = tuple(sorted(queue.counts().items()))
+        with art_lock:
+            if (not fresh and art_cache["items"] is not None and art_cache["key"] == key
+                    and time.monotonic() - art_cache["at"] < ART_CACHE_SECONDS):
+                return art_cache["items"]
+        items = tv.list_art()
+        with art_lock:
+            art_cache.update(key=key, at=time.monotonic(), items=items)
+        return items
+
+    def forget_art():
+        with art_lock:
+            art_cache["items"] = None
+
+    tv_thumbs = settings.thumbs_dir / "tv"
 
     def wake():
         queue.retry_now()
@@ -194,7 +218,7 @@ def create_app(
     @app.get("/api/art")
     def art():
         try:
-            items = tv.list_art()
+            items = tv_art()
         except TVUnavailable:
             return err(503, "tv_off", "The TV is off or cannot be reached.")
         live = {i.id for i in items}
@@ -221,12 +245,19 @@ def create_app(
         piece = library.get(cid)
         if piece and piece.thumb_path and Path(piece.thumb_path).exists():
             return send_file(piece.thumb_path, mimetype="image/jpeg", max_age=3600)
+        safe = re.fullmatch(r"[A-Za-z0-9_-]{1,64}", cid)
+        cached = tv_thumbs / f"{cid}.jpg" if safe else None
+        if cached and cached.exists():
+            return send_file(cached, mimetype="image/jpeg", max_age=3600)
         try:
             data = tv.thumbnail(cid)
         except TVUnavailable:
             return err(503, "tv_off", "The TV is off or cannot be reached.")
         if not data:
             return err(404, "not_found", "No such artwork.")
+        if cached:
+            tv_thumbs.mkdir(parents=True, exist_ok=True)
+            cached.write_bytes(data)
         return send_file(io.BytesIO(data), mimetype="image/jpeg", max_age=3600)
 
     @app.post("/api/art/<cid>/show")
@@ -236,6 +267,7 @@ def create_app(
         piece = library.get(cid)
         name = piece.name if piece else (str(body.get("name") or "")[:60] or cid)
         job_id = queue.enqueue_show(cid, name, by=who(body.get("by")))
+        forget_art()
         if worker:
             worker.wake()
         return jsonify(job=job_id), 202
@@ -250,6 +282,7 @@ def create_app(
         except TVUnavailable:
             return err(503, "tv_off", "The TV is off or cannot be reached.")
         library.remove(cid)
+        forget_art()
         if piece.thumb_path:
             Path(piece.thumb_path).unlink(missing_ok=True)
         return jsonify(ok=True)
@@ -267,6 +300,7 @@ def create_app(
         if not isinstance(tv, FakeTV):
             return err(404, "not_found", "Not found.")
         tv.online = bool((request.get_json(silent=True) or {}).get("online", True))
+        forget_art()
         with cache_lock:
             cache["at"] = 0.0
         if tv.online:

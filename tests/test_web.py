@@ -187,3 +187,29 @@ def test_friendly_label():
 def test_upload_with_camera_name_gets_friendly_label(env):
     r = post(env, name="IMG_0193.png")
     assert r.json["name"].startswith("Photo, ")
+
+
+def test_art_list_is_cached_between_polls(env):
+    calls = []
+    real = env.tv.list_art
+    env.tv.list_art = lambda: calls.append(1) or real()
+    for _ in range(3):
+        assert env.client.get("/api/art").status_code == 200
+    assert len(calls) == 1  # three polls, one TV call
+    env.client.post("/api/art/SAM-2/show", json={})
+    env.client.get("/api/art")
+    assert len(calls) == 2  # a change here asks the TV again
+    run_worker(env)  # the show job finishes
+    c = current(env)
+    assert len(calls) == 3 and c["id"] == "SAM-2"
+
+
+def test_tv_thumbnails_are_cached_on_disk(env):
+    calls = []
+    real = env.tv.thumbnail
+    env.tv.thumbnail = lambda cid: calls.append(cid) or real(cid)
+    assert env.client.get("/api/art/SAM-1/thumb").status_code == 200
+    env.tv.online = False
+    assert env.client.get("/api/art/SAM-1/thumb").status_code == 200  # from disk, TV not needed
+    assert calls == ["SAM-1"]
+    assert env.client.get("/api/art/..%2Fx/thumb").status_code in (404, 503)

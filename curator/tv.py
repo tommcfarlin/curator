@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import io
+import logging
+import os
 import socket
 import threading
 import uuid
@@ -17,6 +19,13 @@ from PIL import Image
 
 class TVUnavailable(Exception):
     """The TV is off, unreachable, or refused the connection."""
+
+
+# samsungtvws logs the pairing token at INFO level ("New token ..."). Keep it out of our logs.
+logging.getLogger("samsungtvws").setLevel(logging.WARNING)
+
+DENIED = ("The TV did not allow Curator. On the TV, open Settings > General > External Device "
+          "Manager > Device Connection Manager > Device List, and set Curator to Allow.")
 
 
 @dataclass(frozen=True)
@@ -52,13 +61,15 @@ class SamsungTV:
     """
 
     def __init__(self, host: str, port: int = 8002, token_file: Optional[Path] = None,
-                 name: str = "Curator", timeout: float = 15.0, art_factory=None):
+                 name: str = "Curator", timeout: float = 15.0, art_factory=None,
+                 key_press_delay: float = 0.0):
         self.host = host
         self.port = port
         self.token_file = Path(token_file) if token_file else None
         self.name = name
         self.timeout = timeout
         self._art_factory = art_factory
+        self.key_press_delay = key_press_delay
         self._lock = threading.RLock()
 
     # -- connection helpers -------------------------------------------------
@@ -71,8 +82,11 @@ class SamsungTV:
 
         if self.token_file:
             self.token_file.parent.mkdir(parents=True, exist_ok=True)
+        # key_press_delay is a pause after every command, meant for remote key presses.
+        # Art requests wait for the TV's reply anyway, so the default 1 s only adds lag.
         return SamsungTVArt(host=self.host, port=self.port, timeout=self.timeout, name=self.name,
-                            token_file=str(self.token_file) if self.token_file else None)
+                            token_file=str(self.token_file) if self.token_file else None,
+                            key_press_delay=self.key_press_delay)
 
     def _run(self, fn):
         """Open a connection, run `fn(art)`, close it. Map failures to TVUnavailable."""
@@ -83,18 +97,32 @@ class SamsungTV:
                 raise TVUnavailable(f"samsungtvws is not installed: {e}") from e
             try:
                 art.open()
+                self._protect_token()
                 return fn(art)
             except TVUnavailable:
                 raise
             except (OSError, TimeoutError) as e:
                 raise TVUnavailable(f"Cannot reach the TV: {e}") from e
             except Exception as e:  # library and websocket errors
+                if type(e).__name__ == "UnauthorizedError":
+                    raise TVUnavailable(DENIED) from e
                 raise TVUnavailable(f"The TV did not accept the request: {type(e).__name__}: {e}") from e
             finally:
                 try:
                     art.close()
                 except Exception:
                     pass
+
+    def _protect_token(self) -> None:
+        """The token lets anyone on the network control the TV. Only the owner may read it."""
+        if self.token_file and self.token_file.exists():
+            try:
+                os.chmod(self.token_file, 0o600)
+            except OSError:
+                pass
+
+    def is_paired(self) -> bool:
+        return bool(self.token_file and self.token_file.exists() and self.token_file.read_text().strip())
 
     # -- the TV interface ---------------------------------------------------
 
