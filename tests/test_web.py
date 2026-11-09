@@ -30,7 +30,7 @@ def test_upload_prepares_exact_size_and_queues(env):
     job = env.q.get(r.json["job"])
     with Image.open(job.path) as im:
         assert im.size == (320, 180) and im.format == "JPEG"
-    assert job.name == "photo"
+    assert job.name.startswith("Photo, ")  # "photo" is a camera-style name
     assert list(env.s.incoming_dir.iterdir()) == []  # temp file is gone
 
 
@@ -157,3 +157,33 @@ def test_failed_job_can_be_retried(env):
 
 def test_thumb_route_rejects_bad_stem(env):
     assert env.client.get("/thumb/..%2Fsecret").status_code == 404
+
+
+def test_home_screen_files_are_served(env):
+    r = env.client.get("/manifest.webmanifest")
+    assert r.status_code == 200 and r.json["name"] == "Curator"
+    for name in ("apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
+        r = env.client.get(f"/{name}")
+        assert r.status_code == 200 and r.mimetype == "image/png"
+    assert env.client.get("/index.html").status_code == 404  # only listed files
+    assert env.client.get("/web.py").status_code == 404
+
+
+def test_share_and_qr(env):
+    r = env.client.get("/api/share", base_url="http://192.168.1.30:8087")
+    assert r.json["url"] == "http://192.168.1.30:8087/"
+    r = env.client.get("/qr.svg", base_url="http://192.168.1.30:8087")
+    assert r.status_code == 200 and r.mimetype == "image/svg+xml" and b"<svg" in r.data
+
+
+def test_friendly_label():
+    from curator.web import friendly_label
+    when = 1794268800  # 2026-11-09 in most time zones
+    for camera in ("IMG_0193", "PXL_20261109_101500123", "DSC01234", "image", "20261109_101500", "Screenshot 2026"):
+        assert friendly_label(camera, when).startswith("Photo, Nov")
+    assert friendly_label("Beach day", when) == "Beach day"
+
+
+def test_upload_with_camera_name_gets_friendly_label(env):
+    r = post(env, name="IMG_0193.png")
+    assert r.json["name"].startswith("Photo, ")

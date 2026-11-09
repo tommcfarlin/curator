@@ -35,6 +35,19 @@ def main(argv=None) -> int:
     from waitress import serve
 
     print(f"Curator ({'fake TV' if args.fake_tv else s.tv_host}) on http://{bind}:{port}")
+    if bind in ("0.0.0.0", "::"):
+        from .web import lan_address
+
+        ip = lan_address()
+        if ip:
+            url = f"http://{ip}:{port}/"
+            print(f"Open this on a phone on the same Wi-Fi: {url}")
+            try:
+                import segno
+
+                segno.make(url, error="m").terminal(compact=True)
+            except Exception:
+                pass
     serve(app, host=bind, port=port, threads=8)
     return 0
 

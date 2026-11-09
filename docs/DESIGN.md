@@ -8,7 +8,7 @@ The TV is a 2021 The Frame, model QN55LS03AAFXZA, Tizen 6.0, at 192.168.1.20.
 
 ## Status
 
-Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac and pass 63 tests. The real TV client (`SamsungTV` in `curator/tv.py`, for `samsungtvws`) is written and tested with a fake connection. Nothing in this project has connected to the TV. The Pi has SSH access but no Curator code.
+Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac and pass 67 tests. The real TV client (`SamsungTV` in `curator/tv.py`, for `samsungtvws`) is written and tested with a fake connection. Nothing in this project has connected to the TV. The Pi has SSH access but no Curator code.
 
 Plan: (1) build and test on the Mac with the fake TV (done), (2) one supervised check against the real TV, (3) deploy to the Pi with systemd, (4) switch the Pi to the real TV.
 
@@ -87,6 +87,18 @@ The web app is the main way to add photos. It must work in Safari on iPhone and 
 - Upload limit: 25 MB per file. Phone photos are usually 2 to 8 MB.
 - The server checks every upload with Pillow before it accepts the file. It never uses the file name from the phone. It makes its own.
 - No login in version 1. Home network only. A shared PIN is a possible later addition.
+
+## Ease of use
+
+The main users can be in their sixties and not technical. These rules apply to every screen.
+
+- Text starts at 17px and uses rem units. On iPhone the page follows the Dynamic Type text size. On Android, Chrome text scaling enlarges the page.
+- The page is a web app that you add to the home screen. It has a manifest, an Apple touch icon, and an icon for Android. Settings shows the steps for iPhone and Android, and a QR code that opens the page on another phone. The server prints the same QR code in the terminal at startup.
+- Words are plain. The page does not show pixel counts, zoom factors, or file names. A camera file name like `IMG_0193` becomes "Photo, Nov 9".
+- A photo card scrolls like the rest of the page. To move the crop, you tap Adjust, drag, and tap Done.
+- The Send button stays visible above the tab bar.
+- Remove asks for confirmation, because it cannot be undone.
+- In Activity, only the newest request that changed the screen says "Showing". Each row shows who and when.
 
 ## Choosing the photo that the TV shows
 

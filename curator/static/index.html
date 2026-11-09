@@ -4,61 +4,76 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Curator</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Curator">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <script>try{var m=localStorage.getItem('curator-theme');if(m==='light'||m==='dark')document.documentElement.dataset.theme=m}catch(e){}</script>
 <style>
 :root{--bg:#000;--surface:#1c1c1e;--surface2:#2c2c2e;--line:#38383a;--text:#fff;--muted:#8e8e93;--accent:#0a84ff;--accent-ink:#fff;--ok:#30d158;--warn:#ff9f0a;--bad:#ff453a;--bar:rgba(28,28,30,.72);--r:12px;color-scheme:dark}
 @media (prefers-color-scheme:light){:root:not([data-theme]){--bg:#f2f2f7;--surface:#fff;--surface2:#e9e9ee;--line:#d1d1d6;--text:#000;--muted:#6c6c70;--accent:#007aff;--ok:#248a3d;--warn:#c93400;--bad:#d70015;--bar:rgba(249,249,249,.78);color-scheme:light}}
 :root[data-theme=light]{--bg:#f2f2f7;--surface:#fff;--surface2:#e9e9ee;--line:#d1d1d6;--text:#000;--muted:#6c6c70;--accent:#007aff;--ok:#248a3d;--warn:#c93400;--bad:#d70015;--bar:rgba(249,249,249,.78);color-scheme:light}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',system-ui,sans-serif}
+html{font-size:106.25%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@supports (font:-apple-system-body){@media (pointer:coarse){html{font:-apple-system-body}}}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:1rem/1.45 -apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',system-ui,sans-serif}
 button,input{font-family:inherit}
 .seg.three{grid-template-columns:repeat(3,1fr)}
 body{min-height:100dvh;padding:0 16px calc(84px + env(safe-area-inset-bottom))}
 .wrap{max-width:640px;margin:0 auto}
-header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 10px;position:sticky;top:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);margin:0 -16px;padding-left:16px;padding-right:16px;z-index:5}
-h1{font:700 28px/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",system-ui,sans-serif;margin:0;letter-spacing:-.4px}
-.pill{display:flex;gap:8px;align-items:center;border:0;background:var(--surface);color:var(--text);border-radius:999px;padding:8px 12px;font-size:13px;min-height:40px}
+header{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 0 10px;position:sticky;top:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);margin:0 -16px;padding-left:16px;padding-right:16px;z-index:5}
+h1{font:700 1.75rem/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",system-ui,sans-serif;margin:0;letter-spacing:-.4px}
+.pill{display:flex;gap:8px;align-items:center;border:0;background:var(--surface);color:var(--text);border-radius:999px;padding:8px 14px;font-size:.88rem;min-height:44px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
 .off .dot{background:var(--bad)}
-h2{font-size:13px;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.02em}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:var(--r);border:0;background:var(--surface);color:var(--text);font-weight:600;font-size:16px;cursor:pointer}
+h2{font-size:.82rem;margin:22px 0 8px 4px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.02em}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:3.2rem;border-radius:var(--r);border:0;background:var(--surface);color:var(--text);font-weight:600;font-size:1rem;cursor:pointer}
 .btn.primary{background:var(--accent);color:var(--accent-ink)}.btn:not(.primary):not(.danger){color:var(--accent)}
-.btn.danger{color:var(--bad)}
+.btn.danger{color:var(--bad)}.btn.danger.fill{background:var(--bad);color:#fff}
 .btn[disabled]{opacity:.45}
 .drop{border:0;border-radius:var(--r);padding:34px 16px;text-align:center;background:var(--surface);color:var(--muted)}
-.drop strong{display:block;color:var(--text);font-size:18px;margin-bottom:4px}
+.drop strong{display:block;color:var(--text);font-size:1.15rem;margin-bottom:4px}
 .drop .btn{margin-top:16px}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:12px;padding:4px;gap:4px}
-.seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:600;font-size:15px;cursor:pointer}
+.seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:600;font-size:.94rem;cursor:pointer}
 .seg button[aria-pressed=true]{background:var(--bg);color:var(--text);box-shadow:0 1px 3px #0003}
 :root:not([data-theme=dark]) .seg button[aria-pressed=true]{}
 .card{background:var(--surface);border:0;border-radius:var(--r);overflow:hidden;margin:12px 0}
-.frame{position:relative;aspect-ratio:16/9;background:#000;overflow:hidden;touch-action:none}
+.frame{position:relative;aspect-ratio:16/9;background:#000;overflow:hidden;touch-action:pan-y}
+.frame.adj{touch-action:none;outline:3px solid var(--accent);outline-offset:-3px}
 .frame img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
-.hint{position:absolute;left:8px;bottom:8px;font-size:12px;background:#000a;color:#fff;border-radius:6px;padding:3px 8px}
-.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;font-size:14px}
+.hint{position:absolute;left:8px;top:8px;right:8px;font-size:.82rem;background:#000b;color:#fff;border-radius:8px;padding:6px 10px;pointer-events:none}
+.adjbtn{position:absolute;right:8px;bottom:8px;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:#000b;color:#fff;font-weight:600;font-size:.94rem;cursor:pointer}
+.adj .adjbtn{background:var(--accent)}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 6px 6px 12px;font-size:.94rem;color:var(--muted)}
 .meta span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rm{border:0;background:none;color:var(--muted);min-width:44px;min-height:44px;font-size:20px;cursor:pointer}
-.chip{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface2);white-space:nowrap}
+.rm{border:0;background:none;color:var(--bad);min-width:44px;min-height:44px;padding:0 10px;font-size:1rem;font-weight:600;cursor:pointer}
+.chip{font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface2);white-space:nowrap}
 .chip.ok{color:var(--ok)}.chip.warn{color:var(--warn)}.chip.bad{color:var(--bad)}
 .bar{height:3px;background:var(--surface2)}.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tile{position:relative;padding:0;border:0;border-radius:12px;overflow:hidden;background:var(--surface);cursor:pointer;color:inherit;text-align:left}
+.tile{position:relative;display:flex;flex-direction:column;justify-content:flex-start;padding:0;border:0;border-radius:12px;overflow:hidden;background:var(--surface);cursor:pointer;color:inherit;text-align:left}
 .tile .art{aspect-ratio:16/9;display:block;width:100%}
-.tile small{display:block;padding:8px 10px;color:var(--muted);font-size:13px}
-.badge{position:absolute;top:8px;left:8px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px}
-.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:15px;cursor:pointer}
-.switch small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.tile small{display:block;padding:8px 10px;color:var(--muted);font-size:.94rem;line-height:1.3}
+.tile small b{display:block;color:var(--text);font-weight:600}
+.badge{position:absolute;top:8px;left:8px;background:var(--accent);color:var(--accent-ink);font-size:.8rem;font-weight:700;border-radius:999px;padding:4px 10px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:1rem;cursor:pointer}
+.switch small{display:block;color:var(--muted);font-size:.88rem;margin-top:2px}
 .switch input{width:51px;height:31px;appearance:none;-webkit-appearance:none;border-radius:999px;background:var(--surface2);position:relative;flex:none;cursor:pointer;transition:background .2s;margin:0}
 .switch input::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0004;transition:transform .2s}
 .switch input:checked{background:var(--ok)}.switch input:checked::after{transform:translateX(20px)}
-.text{width:100%;min-height:48px;border:0;border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:16px;padding:0 14px}
+.text{width:100%;min-height:48px;border:0;border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:1rem;padding:0 14px}
 .badge.q{background:var(--warn);color:#fff}
 .row{display:flex;align-items:center;gap:12px;background:var(--surface);border:0;border-radius:12px;padding:10px;margin:8px 0}
 .row .art{width:72px;aspect-ratio:16/9;border-radius:6px;flex:none}
-.row .t{flex:1;min-width:0}.row .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}.row .t span{font-size:13px;color:var(--muted)}
+.row .t{flex:1;min-width:0}.row .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:1rem}.row .t span{font-size:.88rem;color:var(--muted)}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:9}
-nav button{flex:1;min-height:64px;border:0;background:none;color:var(--muted);font-weight:600;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+nav button{flex:1;min-height:64px;border:0;background:none;color:var(--muted);font-weight:600;font-size:.76rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 nav button[aria-current=page]{color:var(--accent)}
 nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .sheet{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;z-index:20}
@@ -66,15 +81,21 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 .sheet .in{width:100%;max-width:640px;margin:0 auto;background:var(--surface);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));display:grid;gap:10px}
 .sheet .art{aspect-ratio:16/9;border-radius:10px;width:100%}
 .empty{color:var(--muted);text-align:center;padding:28px 0}
-.note{font-size:13px;color:var(--muted);margin:8px 2px}
-.callout{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);padding:14px;margin:0 0 14px;font-size:14px;color:var(--muted)}
+.note{font-size:.94rem;color:var(--muted);margin:8px 2px}
+.callout{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);padding:14px;margin:0 0 14px;font-size:.94rem;color:var(--muted)}
 .callout b{color:var(--text)}
 .callout svg{flex:none;width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
 .callout p{margin:0}.callout p+p{margin-top:6px}
-.q{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;font-size:13px;border-top:.5px solid var(--line)}
-.q i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--ok)}
+.q{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;font-size:.94rem;border-top:.5px solid var(--line)}
+.q i{flex:none;width:10px;height:10px;border-radius:50%;margin-top:.45em;background:var(--ok)}
 .q.warn i{background:var(--warn)}.q.bad i{background:var(--bad)}
-.q div b{display:block;font-size:14px}.q div span{color:var(--muted)}
+.q div b{display:block;font-size:1rem}.q div span{color:var(--muted)}
+.sendbar{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom) + 10px);z-index:4;margin-top:12px}
+.sendbar .btn{box-shadow:0 4px 16px #0003}
+.qr{display:block;width:200px;height:200px;margin:4px auto 8px;border-radius:12px;background:#fff;padding:6px}
+.addr{text-align:center;font-weight:600;word-break:break-all;margin:0 0 6px}
+.steps{margin:6px 0 0;padding-left:1.3em;color:var(--muted);font-size:.94rem}.steps li{margin:4px 0}
+.callout .x{margin-left:auto;align-self:flex-start;border:0;background:none;color:var(--muted);min-width:44px;min-height:44px;font-size:1rem;cursor:pointer}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -87,11 +108,16 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 
 <main>
 <section id="add">
+  <div class="callout" id="homehint" role="note" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M12 8v6M9 11h6"/></svg>
+    <div><p><b>Tip: put Curator on your home screen.</b></p><p>Then you can open it with one tap. <a href="#" id="homehow">Show me how</a></p></div>
+    <button class="x" id="homehide" aria-label="Hide this tip">✕</button>
+  </div>
   <div class="callout" role="note">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
     <div>
-      <p><b>Best results: 3840 × 2160 pixels or larger</b> (4K, 16:9). <b>Minimum: 1920 × 1080.</b></p>
-      <p>Smaller photos are enlarged and can look blurry. Photos from a recent phone are usually big enough. Curator never stretches a photo, so it will not look squashed.</p>
+      <p><b>Photos from your phone look great on the TV.</b></p>
+      <p>Very small photos, such as ones saved from a text message or a website, can look blurry. Curator tells you if a photo is too small.</p>
     </div>
   </div>
   <div class="drop" id="drop">
@@ -106,11 +132,11 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
       <button aria-pressed="true" data-mode="crop">Fill screen</button>
       <button aria-pressed="false" data-mode="fit">Show whole photo</button>
     </div>
-    <p class="note" id="modenote">Fill screen trims the edges. Drag a photo to choose what stays.</p>
+    <p class="note" id="modenote">Fill screen trims the edges. Tap Adjust on a photo to choose what stays.</p>
     <label class="switch"><span>Show on the TV right away<small id="shownote">Off: the photo is added and the TV keeps showing what it shows now.</small></span><input type="checkbox" id="shownow"></label>
     <div id="cards"></div>
-    <button class="btn primary" id="send">Send to Frame</button>
-    <button class="btn" id="more" style="margin-top:10px">Add more photos</button>
+    <button class="btn" id="more">Add more photos</button>
+    <div class="sendbar"><button class="btn primary" id="send">Send to the TV</button></div>
   </div>
 </section>
 
@@ -125,6 +151,19 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
   <div id="jobs"></div>
 </section>
 <section id="settings" hidden>
+  <h2>Open Curator on another phone</h2>
+  <div class="card" style="padding:14px">
+    <img class="qr" id="qr" alt="QR code that opens Curator" width="200" height="200">
+    <p class="addr" id="addr"></p>
+    <p class="note" style="text-align:center;margin-top:0">Point the other phone's camera at this code, then tap the link that appears. The phone must be on your home Wi-Fi.</p>
+  </div>
+  <h2 id="homesteps">Put Curator on your home screen</h2>
+  <div class="card" style="padding:4px 14px 12px">
+    <p style="margin:10px 0 0"><b>iPhone (Safari)</b></p>
+    <ol class="steps"><li>Tap the Share button (a square with an arrow).</li><li>Tap “Add to Home Screen”.</li><li>Tap “Add”.</li></ol>
+    <p style="margin:12px 0 0"><b>Android (Chrome)</b></p>
+    <ol class="steps"><li>Tap the menu button (three dots).</li><li>Tap “Add to Home screen”.</li><li>Tap “Add”.</li></ol>
+  </div>
   <h2>Your name</h2>
   <input class="text" id="myname" type="text" maxlength="30" placeholder="For example Tom" autocomplete="given-name" aria-label="Your name">
   <p class="note">Curator shows your name next to the photo you choose for the TV. It is only a label. There is no login.</p>
@@ -144,9 +183,16 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
   <b id="stitle"></b>
   <p class="note" id="snote" hidden>This is Samsung art. Curator can show it but cannot remove it. Use the TV to remove it.</p>
   <p class="note" id="swho" hidden></p>
-  <button class="btn primary" id="show">Show on TV</button>
-  <button class="btn danger" id="del">Remove from Frame</button>
-  <button class="btn" id="close">Cancel</button>
+  <div id="sacts" style="display:grid;gap:10px">
+    <button class="btn primary" id="show">Show on TV</button>
+    <button class="btn danger" id="del">Remove from the TV</button>
+    <button class="btn" id="close">Cancel</button>
+  </div>
+  <div id="sconfirm" style="display:grid;gap:10px" hidden>
+    <p style="margin:0;font-size:1.06rem" id="sconfirmtxt"></p>
+    <button class="btn danger fill" id="delyes">Remove</button>
+    <button class="btn" id="delno">Keep it</button>
+  </div>
 </div></div>
 
 <nav aria-label="Sections">
@@ -160,6 +206,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let myName='';try{myName=localStorage.getItem('curator-name')||''}catch(e){}
+let adjusting=null;
 let mode='crop', items=[], uploads=[], jobs=[], art=[], artError='', tvOnline=true, fake=false, sel=null, uid=0;
 
 function tab(t){$$('main>section').forEach(s=>s.hidden=s.id!==t);$$('nav button').forEach(b=>b.dataset.tab===t?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));if(t==='library')loadArt();render()}
@@ -178,34 +225,37 @@ $('#file').onchange=e=>{for(const f of e.target.files){const it={f,url:URL.creat
 const FW=3840,FH=2160,MIN_W=1920,HEAVY=.35;
 function assess(w,h,m){let s,tr=0;if(m==='crop'){const wide=w*FH>h*FW;const cw=wide?Math.round(h*FW/FH):w,ch=wide?h:Math.round(w*FH/FW);s=FW/cw;tr=1-(cw*ch)/(w*h)}else{s=Math.min(FW/w,FH/h)}
   return{level:s<=1?'great':s<=FW/MIN_W+1e-9?'good':'too_small',s,tr}}
-function quality(it){if(!it.w)return'';const a=assess(it.w,it.h,mode),px=`${it.w} × ${it.h}`;let c,t,d;
-  if(a.level==='great'){c='';t='Looks sharp';d=`${px} is plenty for the Frame.`}
-  else if(a.level==='good'){c='warn';t='Good enough';d=`${px} will be enlarged ${a.s.toFixed(1)}×. It should look fine from across the room.`}
-  else{c='bad';t='Too small: may look blurry';d=`${px} would be enlarged ${a.s.toFixed(1)}×. The minimum is ${MIN_W} × 1080 after trimming. Choose a bigger photo, or remove this one.`;
-    if(mode==='crop'){const f=assess(it.w,it.h,'fit');if(f.level!=='too_small')d=`${px} would be enlarged ${a.s.toFixed(1)}× to fill the screen. “Show whole photo” enlarges it only ${f.s.toFixed(1)}× and looks fine.`}}
-  let extra='';if(mode==='crop'&&a.tr>HEAVY&&!d.includes('Show whole photo'))extra=` About ${Math.round(a.tr*100)}% of this photo will be trimmed. Try “Show whole photo”, or drag to pick what stays.`;
-  return`<div class="q ${c}"><i></i><div><b>${t}</b><span>${d}${extra}</span></div></div>`}
-$$('.seg:not(.three) button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;$$('.seg:not(.three) button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#modenote').textContent=mode==='crop'?'Fill screen trims the edges. Drag a photo to choose what stays.':'The whole photo is shown with black bars where it does not fill the screen.';render()});
+// Plain words only. The numbers stay in assess() and in the title for anyone who asks.
+function quality(it){if(!it.w)return'';const a=assess(it.w,it.h,mode);let c,t,d;
+  if(a.level==='great'){c='';t='Looks great';d='This photo will be sharp on the TV.'}
+  else if(a.level==='good'){c='warn';t='Looks fine';d='It will look good from across the room.'}
+  else{c='bad';t='Too small';d='This photo will look blurry on the TV. Choose a bigger photo, or remove this one.';
+    if(mode==='crop'){const f=assess(it.w,it.h,'fit');if(f.level!=='too_small')d='This photo will look blurry if it fills the screen. It looks fine with “Show whole photo”.'}}
+  let extra='';if(mode==='crop'&&a.tr>HEAVY&&a.level!=='too_small')extra=' A lot of this photo will be cut off to fill the screen. Try “Show whole photo”, or tap Adjust to choose what stays.';
+  return`<div class="q ${c}" title="${it.w} × ${it.h}"><i></i><div><b>${t}</b><span>${d}${extra}</span></div></div>`}
+$$('.seg:not(.three) button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;$$('.seg:not(.three) button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#modenote').textContent=mode==='crop'?'Fill screen trims the edges. Tap Adjust on a photo to choose what stays.':'The whole photo is shown with black bars where it does not fill the screen.';render()});
 
 function renderAdd(){
   $('#drop').hidden=items.length>0;$('#batch').hidden=!items.length;
   $('#cards').innerHTML='';
   items.forEach((it,i)=>{
     const c=document.createElement('div');c.className='card';
-    c.innerHTML=`<div class="frame"><img alt="" src="${it.url}" style="object-fit:${mode==='crop'?'cover':'contain'};object-position:${it.x}% ${it.y}%">${mode==='crop'?'<span class="hint">Drag to reposition</span>':''}</div>
+    const adj=mode==='crop'&&adjusting===it,n=items.length>1?`Photo ${i+1} of ${items.length}`:'Photo';
+    c.innerHTML=`<div class="frame${adj?' adj':''}"><img alt="${n}" src="${it.url}" style="object-fit:${mode==='crop'?'cover':'contain'};object-position:${it.x}% ${it.y}%">${adj?'<span class="hint">Drag the photo to choose what stays on the TV.</span>':''}${mode==='crop'?`<button class="adjbtn">${adj?'Done':'Adjust'}</button>`:''}</div>
       ${quality(it)}
-      <div class="meta"><span>${esc(it.f.name)}</span><button class="rm" aria-label="Remove ${esc(it.f.name)}">✕</button></div>`;
-    c.querySelector('.rm').onclick=()=>{items.splice(i,1);render()};
-    if(mode==='crop'){const fr=c.querySelector('.frame'),im=c.querySelector('img');let d=null;
-      fr.onpointerdown=e=>{d={x:e.clientX,y:e.clientY,ox:it.x,oy:it.y};fr.setPointerCapture(e.pointerId)};
+      <div class="meta"><span>${n}</span><button class="rm" aria-label="Remove ${n}">Remove</button></div>`;
+    c.querySelector('.rm').onclick=()=>{if(adjusting===it)adjusting=null;items.splice(i,1);render()};
+    const ab=c.querySelector('.adjbtn');if(ab)ab.onclick=e=>{e.stopPropagation();adjusting=adj?null:it;render()};
+    if(adj){const fr=c.querySelector('.frame'),im=c.querySelector('img');let d=null;
+      fr.onpointerdown=e=>{if(e.target.closest('.adjbtn'))return;d={x:e.clientX,y:e.clientY,ox:it.x,oy:it.y};fr.setPointerCapture(e.pointerId)};
       fr.onpointermove=e=>{if(!d)return;it.x=Math.min(100,Math.max(0,d.ox-(e.clientX-d.x)/fr.clientWidth*100));it.y=Math.min(100,Math.max(0,d.oy-(e.clientY-d.y)/fr.clientHeight*100));im.style.objectPosition=`${it.x}% ${it.y}%`};
       fr.onpointerup=()=>d=null}
     $('#cards').append(c)});
-  $('#send').textContent=`Send ${items.length} to Frame`;
+  $('#send').textContent=items.length===1?'Send 1 photo to the TV':`Send ${items.length} photos to the TV`;
 }
 
 // Upload one photo with progress. The server prepares it and queues it for the TV.
-function sendOne(it,m,showNow){const u={id:++uid,name:it.f.name,url:it.url,p:0,state:'uploading',error:''};uploads.unshift(u);
+function sendOne(it,m,showNow){const u={id:++uid,name:'Photo',url:it.url,p:0,state:'uploading',error:''};uploads.unshift(u);
   const fd=new FormData();fd.append('file',it.f);fd.append('mode',m);fd.append('fx',it.x);fd.append('fy',it.y);if(showNow)fd.append('show_now','1');if(myName)fd.append('by',myName);
   const x=new XMLHttpRequest();x.open('POST','/api/upload');
   x.upload.onprogress=e=>{if(e.lengthComputable){u.p=Math.round(e.loaded/e.total*100);renderJobs()}};
@@ -214,19 +264,25 @@ function sendOne(it,m,showNow){const u={id:++uid,name:it.f.name,url:it.url,p:0,s
   x.onerror=()=>{u.state='failed';u.error='Could not reach Curator. Check your Wi-Fi.';render()};
   x.send(fd)}
 $('#shownow').onchange=()=>{$('#shownote').textContent=$('#shownow').checked?'On: the last photo you send is shown on the TV when it arrives.':'Off: the photo is added and the TV keeps showing what it shows now.'};
-$('#send').onclick=()=>{const batch=items,show=$('#shownow').checked;items=[];batch.forEach((it,i)=>sendOne(it,mode,show&&i===batch.length-1));tab('queue')};
+$('#send').onclick=()=>{const batch=items,show=$('#shownow').checked;items=[];adjusting=null;batch.forEach((it,i)=>sendOne(it,mode,show&&i===batch.length-1));tab('queue')};
 $('#myname').value=myName;
 $('#myname').oninput=e=>{myName=e.target.value.trim().slice(0,30);try{localStorage.setItem('curator-name',myName)}catch(x){}};
 
 const label={uploading:['Uploading','warn'],waiting:['Waiting for TV','warn'],sending:['Sending…','warn'],done:['On the TV','ok'],failed:['Failed','bad']};
 const timeOf=s=>new Date(s*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const whenOf=s=>{const d=new Date(s*1000),now=new Date();return d.toDateString()===now.toDateString()?timeOf(s):d.toLocaleDateString([],{month:'short',day:'numeric'})+', '+timeOf(s)};
 function renderJobs(){
   const rows=[...uploads.map(u=>({...u,local:true})),...jobs];
+  // Only the newest finished request that changed the screen says "Showing".
+  const shower=rows.find(j=>!j.local&&j.state==='done'&&(j.kind==='show'||j.show_now));
   $('#jobs').innerHTML=rows.length?'':'<div class="empty">Nothing yet. Photos you send show up here.</div>';
-  rows.forEach(j=>{let [t,c]=label[j.state]||[j.state,''];if(j.kind==='show'&&j.state==='done')t='Showing';const r=document.createElement('div');r.className='row';
-    const show=j.kind==='show',who=j.by?` · ${j.by}`:'';
-    const sub=j.local?(j.state==='failed'?j.error:j.p+'%'):j.state==='waiting'?'The TV is off. Curator keeps trying.':j.state==='failed'?(j.error||'Curator gave up.'):show?`Choose for the TV${who}`:(j.show_now?(j.state==='done'?`Shown on the TV${who}`:`Will show on the TV${who}`):`Added${who}`);
-    r.innerHTML=`<span class="art" style="background:url(${esc(j.url||j.thumb)}) center/cover"></span><div class="t"><b>${esc(show?'Show: '+j.name:j.name)}</b><span>${esc(sub)}</span></div>${j.state==='failed'&&!j.local?'<button class="chip bad retry">Retry</button>':`<span class="chip ${c}">${t}</span>`}`;
+  rows.forEach(j=>{let [t,c]=label[j.state]||[j.state,''];const show=j.kind==='show';
+    if(j.state==='done'){if(j===shower){t='Showing';c='ok'}else if(show){t='Done';c=''}}
+    const r=document.createElement('div');r.className='row';
+    const tail=(j.by?` · ${j.by}`:'')+(j.at?` · ${whenOf(j.at)}`:'');
+    const what=show?'Chosen for the TV':j.show_now?'Added and shown':'Added';
+    const sub=j.local?(j.state==='failed'?j.error:`Uploading ${j.p}%`):j.state==='waiting'?'The TV is off. It will go when the TV is on.':j.state==='failed'?(j.error||'Curator gave up.'):what+tail;
+    r.innerHTML=`<span class="art" style="background:url(${esc(j.url||j.thumb)}) center/cover"></span><div class="t"><b>${esc(j.name)}</b><span>${esc(sub)}</span></div>${j.state==='failed'&&!j.local?'<button class="chip bad retry">Retry</button>':`<span class="chip ${c}">${t}</span>`}`;
     const rb=r.querySelector('.retry');if(rb)rb.onclick=async()=>{await api(`/api/jobs/${j.id}/retry`,{method:'POST'});loadStatus()};
     $('#jobs').append(r)});
   const open=rows.filter(j=>j.state!=='done'&&j.state!=='failed').length;$('#qn').textContent=open?` (${open})`:'';
@@ -236,17 +292,22 @@ function renderLib(){
   const g=$('#grid');g.innerHTML='';
   if(artError){g.innerHTML=`<div class="empty" style="grid-column:1/-1">${esc(artError)}</div>`;return}
   art.forEach(a=>{const b=document.createElement('button');b.className='tile';
-    b.innerHTML=`<span class="art" style="background:url(${esc(a.thumb)}) center/cover"></span>${a.current?'<span class="badge">Showing</span>':a.queued?'<span class="badge q">Queued</span>':''}<small>${esc(a.name)}${a.mine?'':' · Samsung'}${a.current&&a.chosen_by?`<br>Chosen by ${esc(a.chosen_by)}, ${timeOf(a.chosen_at)}`:''}</small>`;
+    b.innerHTML=`<span class="art" style="background:url(${esc(a.thumb)}) center/cover"></span>${a.current?'<span class="badge">Showing</span>':a.queued?'<span class="badge q">Queued</span>':''}<small><b>${esc(a.name)}</b>${a.mine?'Your photo':'Samsung art'}${a.current&&a.chosen_by?`<br>Chosen by ${esc(a.chosen_by)}`:''}</small>`;
     b.onclick=()=>{sel=a;$('#sart').style.cssText=`background:url(${a.thumb}) center/cover`;$('#stitle').textContent=a.name;$('#del').hidden=!a.mine;$('#show').hidden=a.current;$('#show').textContent=a.queued?'Show on TV (already queued)':'Show on TV';
-      const w=$('#swho');w.hidden=!a.current;w.textContent=a.current?(a.chosen_by?`Showing now. Chosen by ${a.chosen_by} at ${timeOf(a.chosen_at)}.`:'Showing now.'):'';$('#snote').hidden=a.mine;$('#sheet').classList.add('open')};g.append(b)});
+      const w=$('#swho');w.hidden=!a.current;w.textContent=a.current?(a.chosen_by?`Showing now. Chosen by ${a.chosen_by} at ${timeOf(a.chosen_at)}.`:'Showing now.'):'';$('#snote').hidden=a.mine;sheetMode(false);$('#sheet').classList.add('open')};g.append(b)});
 }
-$('#close').onclick=()=>$('#sheet').classList.remove('open');
+function closeSheet(){$('#sheet').classList.remove('open');sheetMode(false)}
+function sheetMode(confirm){$('#sacts').hidden=confirm;$('#sconfirm').hidden=!confirm;if(confirm)$('#sconfirmtxt').textContent=`Remove “${sel.name}” from the TV? You cannot undo this.`}
+$('#close').onclick=closeSheet;
+$('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
+$('#delno').onclick=()=>sheetMode(false);
 $('#show').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({by:myName,name:sel.name})});loadStatus();loadArt()};
-$('#del').onclick=async()=>{$('#sheet').classList.remove('open');await api(`/api/art/${encodeURIComponent(sel.id)}`,{method:'DELETE'});loadArt()};
+$('#del').onclick=()=>sheetMode(true);
+$('#delyes').onclick=async()=>{closeSheet();await api(`/api/art/${encodeURIComponent(sel.id)}`,{method:'DELETE'});loadArt()};
 
 async function loadStatus(){try{const r=await api('/api/status');if(r.ok){jobs=r.json.jobs;tvOnline=r.json.tv_online;fake=r.json.fake;renderTv();renderJobs()}}catch(e){}}
 let artKey='';
-async function loadArt(){let e='',a=art;try{const r=await api('/api/art');if(r.ok){a=r.json.art}else{e=r.status===503?'The TV is off, so the list is not available. Photos you send still wait in Activity.':'Could not load the list.'}}catch(x){e='Could not reach Curator.'}
+async function loadArt(){let e='',a=art;try{const r=await api('/api/art');if(r.ok){a=r.json.art}else{e=r.status===503?'The TV is off, so this list is not available right now. Photos you send will go to the TV when it is on.':'Could not load the list.'}}catch(x){e='Could not reach Curator.'}
   const k=JSON.stringify([a,e]);if(k===artKey)return;artKey=k;art=a;artError=e;renderLib()}
 
 function applyTheme(m){const r=document.documentElement;if(m==='light'||m==='dark')r.dataset.theme=m;else delete r.dataset.theme;
@@ -255,6 +316,15 @@ let savedTheme='system';try{savedTheme=localStorage.getItem('curator-theme')||'s
 applyTheme(savedTheme);
 $$('#theme button').forEach(b=>b.onclick=()=>{const m=b.dataset.themePick;applyTheme(m);try{if(m==='system')localStorage.removeItem('curator-theme');else localStorage.setItem('curator-theme',m)}catch(e){}});
 function render(){renderAdd();renderLib();renderJobs()}
+const standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const touch=window.matchMedia('(pointer:coarse)').matches;
+let tipHidden=false;try{tipHidden=localStorage.getItem('curator-hometip')==='hidden'}catch(e){}
+$('#homehint').hidden=standalone||!touch||tipHidden;
+$('#homehide').onclick=()=>{$('#homehint').hidden=true;try{localStorage.setItem('curator-hometip','hidden')}catch(e){}};
+$('#homehow').onclick=e=>{e.preventDefault();tab('settings');loadShare();$('#homesteps').scrollIntoView({behavior:'smooth'})};
+let shared=false;
+function loadShare(){if(shared)return;shared=true;$('#qr').src='/qr.svg';api('/api/share').then(r=>{if(r.ok)$('#addr').textContent=r.json.url})}
+$('[data-tab=settings]').addEventListener('click',loadShare);
 render();loadStatus();
 setInterval(()=>{if(!document.hidden){loadStatus();if(!$('#library').hidden)loadArt()}},3000);
 </script>

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import io
+import re
+import socket
 import threading
 import time
 import uuid
@@ -20,6 +22,36 @@ from .worker import Worker
 STATIC = Path(__file__).resolve().parent / "static"
 THUMB_SIZE = (480, 270)
 TV_CACHE_SECONDS = 5.0
+STATIC_FILES = {
+    "manifest.webmanifest": "application/manifest+json",
+    "apple-touch-icon.png": "image/png",
+    "icon-192.png": "image/png",
+    "icon-512.png": "image/png",
+    "icon-maskable-512.png": "image/png",
+}
+CAMERA_NAME = re.compile(r"^(img|dsc|dscn|dcim|pxl|mvimg|image|photo|screenshot|picture|p)[\s_-]*[\d_ -]*$", re.I)
+
+
+def friendly_label(stem: str, when: float | None = None) -> str:
+    """Use the file name as a label unless it is a camera code like IMG_0193."""
+    stem = " ".join((stem or "").split())[:60]
+    if stem and not CAMERA_NAME.match(stem) and not re.fullmatch(r"[\d_ -]+", stem):
+        return stem
+    t = time.localtime(when if when is not None else time.time())
+    return f"Photo, {time.strftime('%b', t)} {t.tm_mday}"
+
+
+def lan_address() -> str | None:
+    """The address other devices on the Wi-Fi use to reach this machine. No packet is sent."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("192.0.2.1", 9))  # TEST-NET address: connect() on UDP only picks a route
+        ip = s.getsockname()[0]
+        return None if ip.startswith("127.") else ip
+    except OSError:
+        return None
+    finally:
+        s.close()
 
 
 def create_app(
@@ -70,6 +102,33 @@ def create_app(
     def index():
         return send_from_directory(STATIC, "index.html")
 
+    @app.get("/<name>")
+    def static_file(name: str):
+        if name not in STATIC_FILES:
+            return err(404, "not_found", "Not found.")
+        return send_from_directory(STATIC, name, mimetype=STATIC_FILES[name], max_age=86400)
+
+    def share_url() -> str:
+        """The page address for other phones. A local-only address becomes the Wi-Fi address."""
+        host, _, port = request.host.partition(":")
+        if host in ("127.0.0.1", "localhost"):
+            host = lan_address() or host
+        return f"http://{host}{':' + port if port else ''}/"
+
+    @app.get("/api/share")
+    def share():
+        return jsonify(url=share_url())
+
+    @app.get("/qr.svg")
+    def qr():
+        import segno
+
+        out = io.BytesIO()
+        segno.make(share_url(), error="m").save(out, kind="svg", scale=8, border=2,
+                                                 dark="#000", light="#fff", xmldecl=False)
+        return Response(out.getvalue(), mimetype="image/svg+xml",
+                        headers={"Cache-Control": "no-store"})
+
     @app.post("/api/upload")
     def upload():
         f = request.files.get("file")
@@ -84,7 +143,7 @@ def create_app(
         except ValueError:
             return err(400, "bad_focus", "Focus values must be numbers.")
         # We never use the name from the phone for a file. It is only a label.
-        label = (Path(f.filename or "photo").stem or "photo")[:60]
+        label = friendly_label(Path(f.filename or "photo").stem)
         uid = uuid.uuid4().hex
         incoming = settings.incoming_dir / uid
         f.save(incoming)
@@ -118,7 +177,7 @@ def create_app(
             thumb = f"/api/art/{j.target}/thumb" if j.kind == "show" else f"/thumb/{Path(j.path).stem}"
             jobs.append(dict(
                 id=j.id, name=j.name, state=state, attempts=j.attempts, error=j.last_error,
-                thumb=thumb, kind=j.kind, show_now=bool(j.show_now), by=j.by,
+                thumb=thumb, kind=j.kind, show_now=bool(j.show_now), by=j.by, at=j.created_at,
             ))
         return jsonify(tv_online=tv_online(), fake=isinstance(tv, FakeTV), jobs=jobs)
 
