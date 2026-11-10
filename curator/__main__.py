@@ -28,7 +28,8 @@ def main(argv=None) -> int:
         s = dataclasses.replace(s, data_dir=s.data_dir / "fake-tv")
         tv = FakeTV()
     else:
-        tv = SamsungTV(s.tv_host, s.tv_port, s.token_file, s.tv_name)
+        tv = SamsungTV(s.tv_host, s.tv_port, s.token_file, s.tv_name,
+                       mac=s.tv_mac, mac_file=s.data_dir / "tv-mac.txt")
     queue = RetryQueue(s.db_path)
     library = Library(s.db_path)
     worker = Worker(queue, tv, library, s.thumbs_dir)

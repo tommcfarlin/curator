@@ -34,20 +34,28 @@ def test_done_job_is_not_due_and_path_can_be_added_again():
     assert q.enqueue("a.jpg") != jid
 
 
-def test_failure_delays_next_try_with_backoff():
-    q, c = make(base_delay=30, max_delay=100)
+def test_failure_retries_fast_then_once_a_minute():
+    q, c = make(delays=(2, 5), steady_delay=60)
     jid = q.enqueue("a.jpg")
     job = q.mark_failed_attempt(jid, "tv off")
     assert job.attempts == 1 and job.last_error == "tv off"
     assert q.next_due() is None
-    c.t += 29
-    assert q.next_due() is None
-    c.t += 1
+    c.t += 2
     assert q.next_due().id == jid
-    q.mark_failed_attempt(jid, "tv off")  # delay 60
-    assert q.get(jid).next_attempt_at == c.t + 60
-    q.mark_failed_attempt(jid, "tv off")  # delay 120, capped to 100
-    assert q.get(jid).next_attempt_at == c.t + 100
+    q.mark_failed_attempt(jid, "tv off")
+    assert q.get(jid).next_attempt_at == c.t + 5
+    for _ in range(2):
+        q.mark_failed_attempt(jid, "tv off")
+        assert q.get(jid).next_attempt_at == c.t + 60
+
+
+def test_has_pending():
+    q, _ = make()
+    assert q.has_pending() is False
+    jid = q.enqueue("a.jpg")
+    assert q.has_pending() is True
+    q.mark_done(jid)
+    assert q.has_pending() is False
 
 
 def test_gives_up_after_max_attempts_and_can_be_retried():

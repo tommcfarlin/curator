@@ -8,7 +8,7 @@ The TV is a 2021 The Frame, model QN55LS03AAFXZA, Tizen 6.0, at 192.168.1.20.
 
 ## Status
 
-Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac. The real TV client (`SamsungTV` in `curator/tv.py`) is tested end to end with the real `samsungtvws` library against a simulated Frame (`tests/sim_tv.py`). There are 78 tests. Nothing in this project has connected to the real TV yet. The next step is [TV-TEST.md](TV-TEST.md), then [DEPLOY.md](DEPLOY.md). The Pi has SSH access but no Curator code.
+Stage 1 is done: the web app, the worker, the retry queue and a fake TV run on the Mac. The real TV client (`SamsungTV` in `curator/tv.py`) is tested end to end with the real `samsungtvws` library against a simulated Frame (`tests/sim_tv.py`). There are 92 tests. The first run on the real TV passed (see [TV-TEST.md](TV-TEST.md)). The next step is [TV-TEST.md](TV-TEST.md) for the rest, then [DEPLOY.md](DEPLOY.md). The Pi has SSH access but no Curator code.
 
 Plan: (1) build and test on the Mac with the fake TV (done), (2) one supervised check against the real TV, (3) deploy to the Pi with systemd, (4) switch the Pi to the real TV.
 
@@ -59,8 +59,10 @@ Plan: (1) build and test on the Mac with the fake TV (done), (2) one supervised 
 ## Retry queue
 
 - The queue is a SQLite file. It is in the Python standard library, so it adds no dependency.
-- The delay doubles after each failure: 30 s, 60 s, 120 s, up to 1 hour.
-- After 12 failed tries the job gets the status `failed`. The web page will show it and offer a Retry button.
+- After a failure, Curator tries again after 2 s, 5 s, 10 s, 20 s and 30 s. After that, it tries one time each minute.
+- When the TV starts to answer again, Curator runs the waiting jobs immediately.
+- Curator drops a "show" request that waited longer than 10 minutes. An upload stays in the queue for about 5 hours.
+- After 300 failed tries the job gets the status `failed`. The web page will show it and offer a Retry button.
 - The queue ignores a second add of a path that is already waiting.
 - The clock is a parameter, so tests do not need to wait.
 

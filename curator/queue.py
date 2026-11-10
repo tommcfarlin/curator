@@ -1,7 +1,7 @@
 """Retry queue stored in SQLite (standard library only).
 
 A job is one prepared image waiting to go to the TV. When the TV is off,
-the job stays in the queue and runs again later with growing delays.
+the job stays in the queue and runs again later: fast at first, then one time each minute.
 The queue is safe to use from the web threads and the worker thread.
 """
 from __future__ import annotations
@@ -36,14 +36,16 @@ class RetryQueue:
     def __init__(
         self,
         db_path: str | Path,
-        max_attempts: int = 12,
-        base_delay: float = 30.0,
-        max_delay: float = 3600.0,
+        max_attempts: int = 300,
+        delays: tuple = (2.0, 5.0, 10.0, 20.0, 30.0),
+        steady_delay: float = 60.0,
         clock: Callable[[], float] = time.time,
     ):
         self.max_attempts = max_attempts
-        self.base_delay = base_delay
-        self.max_delay = max_delay
+        # A person waits at the TV, so the first tries come fast. After that,
+        # one try each minute. 300 tries keep an upload alive for about 5 hours.
+        self.delays = tuple(delays)
+        self.steady_delay = steady_delay
         self.clock = clock
         self._lock = threading.RLock()
         if str(db_path) != ":memory:":
@@ -168,7 +170,8 @@ class RetryQueue:
                     (FAILED, attempts, error, job_id),
                 )
             else:
-                delay = min(self.base_delay * 2 ** (attempts - 1), self.max_delay)
+                delay = (self.delays[attempts - 1] if attempts <= len(self.delays)
+                         else self.steady_delay)
                 self.db.execute(
                     "UPDATE jobs SET attempts=?, last_error=?, next_attempt_at=? WHERE id=?",
                     (attempts, error, self.clock() + delay, job_id),
@@ -184,6 +187,11 @@ class RetryQueue:
                 (PENDING, self.clock(), job_id),
             )
             self.db.commit()
+
+    def has_pending(self) -> bool:
+        with self._lock:
+            return self.db.execute(
+                "SELECT 1 FROM jobs WHERE status=? LIMIT 1", (PENDING,)).fetchone() is not None
 
     def retry_now(self) -> None:
         """Make every waiting job due now (for when the TV comes back)."""

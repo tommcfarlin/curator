@@ -1,6 +1,6 @@
 from curator.queue import DONE, FAILED, PENDING
 from curator.tv import FakeTV
-from curator.worker import process_one
+from curator.worker import SHOW_EXPIRED, SHOW_MAX_AGE, process_one
 from PIL import Image
 
 
@@ -90,3 +90,44 @@ def test_last_choice_wins(env):
         pass
     assert [i for i in env.tv.list_art() if i.current][0].id == "SAM-3"
     assert env.q.get(second).status == DONE
+
+
+def test_old_show_request_is_dropped(env):
+    jid = env.q.enqueue_show("SAM-2", "Blue Hour")
+    env.tv.online = False
+    process_one(env.q, env.tv, env.lib, env.s.thumbs_dir)
+    env.tv.online = True
+    now = env.q.clock()
+    env.q.clock = lambda: now + SHOW_MAX_AGE + 61
+    assert process_one(env.q, env.tv, env.lib, env.s.thumbs_dir) is True
+    job = env.q.get(jid)
+    assert job.status == FAILED and job.last_error == SHOW_EXPIRED
+    assert [i for i in env.tv.list_art() if i.current][0].id == "SAM-1"
+    # Retry from the phone gives the request one more try.
+    env.q.retry(jid)
+    assert process_one(env.q, env.tv, env.lib, env.s.thumbs_dir) is True
+    assert [i for i in env.tv.list_art() if i.current][0].id == "SAM-2"
+
+
+def test_old_upload_still_goes_to_the_tv(env):
+    jid = make_job(env)
+    env.tv.online = False
+    process_one(env.q, env.tv, env.lib, env.s.thumbs_dir)
+    env.tv.online = True
+    now = env.q.clock()
+    env.q.clock = lambda: now + SHOW_MAX_AGE + 61
+    assert process_one(env.q, env.tv, env.lib, env.s.thumbs_dir) is True
+    assert env.q.get(jid).status == DONE
+
+
+def test_waiting_jobs_run_when_the_tv_comes_back(env):
+    assert env.w.retry_if_tv_came_back() is False  # nothing waits, so no TV check
+    jid = make_job(env)
+    env.tv.online = False
+    process_one(env.q, env.tv, env.lib, env.s.thumbs_dir)
+    assert env.w.retry_if_tv_came_back() is False
+    assert env.q.next_due() is None
+    env.tv.online = True
+    assert env.w.retry_if_tv_came_back() is True
+    assert env.q.next_due().id == jid
+    assert env.w.retry_if_tv_came_back() is False  # only on the change

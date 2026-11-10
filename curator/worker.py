@@ -11,6 +11,11 @@ from .tv import TV, TVUnavailable
 
 log = logging.getLogger("curator.worker")
 
+# A "show" request that waited longer than this is dropped. A photo that
+# appears on the TV an hour after the request is a surprise, not a feature.
+SHOW_MAX_AGE = 600.0
+SHOW_EXPIRED = "The TV did not answer for 10 minutes. Choose the photo again."
+
 
 def process_one(queue: RetryQueue, tv: TV, library: Library, thumbs_dir: Path) -> bool:
     """Run the next due job. Return True if the job finished (so call again)."""
@@ -43,6 +48,10 @@ def process_one(queue: RetryQueue, tv: TV, library: Library, thumbs_dir: Path) -
 
 def _show(queue: RetryQueue, tv: TV, library: Library, job) -> bool:
     """Tell the TV to show a photo that is already on it."""
+    # attempts > 0 keeps a request that the user sent again with Retry.
+    if job.attempts > 0 and queue.clock() - job.created_at > SHOW_MAX_AGE:
+        queue.mark_failed(job.id, SHOW_EXPIRED)
+        return True
     try:
         tv.select(job.target)
     except KeyError:
@@ -65,6 +74,7 @@ class Worker:
         self.queue, self.tv, self.library = queue, tv, library
         self.thumbs_dir, self.interval = Path(thumbs_dir), interval
         self._wake = threading.Event()
+        self._tv_was_online = False
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name="curator-worker", daemon=True)
 
@@ -78,6 +88,22 @@ class Worker:
         self._stop.set()
         self._wake.set()
 
+    def retry_if_tv_came_back(self) -> bool:
+        """When the TV starts to answer again, run the waiting jobs at once.
+
+        It asks the TV only while jobs wait, so an idle Curator sends nothing.
+        """
+        if not self.queue.has_pending():
+            self._tv_was_online = False
+            return False
+        online = bool(self.tv.is_available())
+        came_back = online and not self._tv_was_online
+        self._tv_was_online = online
+        if came_back:
+            self.queue.retry_now()
+            self._wake.set()
+        return came_back
+
     def _run(self):
         while not self._stop.is_set():
             try:
@@ -85,5 +111,9 @@ class Worker:
                     pass
             except Exception:
                 log.exception("worker loop error")
+            try:
+                self.retry_if_tv_came_back()
+            except Exception:
+                log.exception("TV check failed")
             self._wake.wait(self.interval)
             self._wake.clear()

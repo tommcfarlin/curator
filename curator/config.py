@@ -13,6 +13,7 @@ class Settings:
     tv_host: str = "192.168.1.20"
     tv_port: int = 8002
     tv_name: str = "Curator"
+    tv_mac: str = ""   # optional. Curator learns it while the TV is on.
     token_file: Path = ROOT / "config" / "token.txt"
     web_bind: str = "127.0.0.1"
     web_port: int = 8080
@@ -60,6 +61,7 @@ def load(path: str | Path | None = None, base: Path = ROOT) -> Settings:
         tv_host=tv.get("host", d.tv_host),
         tv_port=int(tv.get("port", d.tv_port)),
         tv_name=tv.get("name", d.tv_name),
+        tv_mac=str(tv.get("mac", d.tv_mac)),
         token_file=_path(tv["token_file"], base) if "token_file" in tv else d.token_file,
         web_bind=web.get("bind", d.web_bind),
         web_port=int(web.get("port", d.web_port)),

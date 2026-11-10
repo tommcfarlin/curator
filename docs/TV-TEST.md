@@ -86,12 +86,26 @@ Keep `config/token.txt`. The Pi needs the same token later, or the TV asks for A
 
 | Question | Result |
 |---|---|
-| Art API version | |
-| Allow prompt appeared once only | |
-| Category ID of Samsung art | |
-| Category ID of uploaded photos | |
-| Upload time for the test card | |
-| Test card shows in Art Mode, no mat, not stretched | |
-| TV answers while in Art Mode | |
-| TV answers after a full power off | |
-| Phone upload and "Show on TV" work | |
+| Art API version | 2.03 |
+| Allow prompt appeared once only | No prompt appeared. The TV sent no token and accepted each connection without one. |
+| Category ID of Samsung art | None on this TV. It has only uploaded photos. |
+| Category ID of uploaded photos | MY-C0002. The TV also lists some photos under M0002 and MY-C0004, so the art list has duplicate IDs. Curator keeps one row for each ID. |
+| Upload time for the test card | 1.9 s |
+| Test card shows in Art Mode, no mat, not stretched | Yes |
+| TV answers while in Art Mode | Yes |
+| TV answers after a full power off | No. The probe stops after 2 s with "The TV does not answer". |
+| Phone upload and "Show on TV" work | Yes. Two uploads and nine show requests, no errors. |
+
+Notes from the first run (2026-11-09):
+
+- On the Mac, the Claude Code sandbox sends traffic through a proxy that refuses LAN addresses. The test commands ran outside the sandbox with `HTTP_PROXY` and `HTTPS_PROXY` unset. This does not apply to the Pi.
+- The test card is MY_F0026.
+
+## Turn on the TV from the app
+
+The "Turn on the TV" button in the On the TV tab sends a Wake-on-LAN packet (a network message that wakes a sleeping device). It needs two things.
+
+1. Curator must know the Wi-Fi hardware address of the TV. Curator asks the TV for it and saves it in `data/tv-mac.txt` the first time that the TV is on while Curator runs. You can also set `mac` in the `[tv]` section of `config/local.toml`.
+2. On the TV, open Settings > General > Network > Expert Settings and turn on "Power On with Mobile". The name can differ by firmware.
+
+If the TV is fully off, a 2021 Frame may ignore the packet. That is the open question for this feature. To test it, turn the TV on, wait one minute so that Curator can save the address, then turn the TV off with the remote and press the button in the app. Write down whether the TV starts after a short press of power (Art Mode off) and after a long press (fully off).

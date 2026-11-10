@@ -58,6 +58,18 @@ def test_list_art_maps_items_and_current():
     assert art.closed
 
 
+def test_list_art_drops_duplicate_ids():
+    """The real Frame (art API 2.03) lists one photo in several categories."""
+    art = FakeArt()
+    art.available = lambda: [{"content_id": "MY_F0018", "category_id": "M0002"},
+                             {"content_id": "MY_F0025", "category_id": "MY-C0002"},
+                             {"content_id": "MY_F0018", "category_id": "MY-C0002"}]
+    art.get_current = lambda: {"content_id": "MY_F0018"}
+    items = make(art).list_art()
+    assert [i.id for i in items] == ["MY_F0018", "MY_F0025"]
+    assert [i.current for i in items] == [True, False]
+
+
 def test_upload_uses_no_mat_and_jpeg(tmp_path):
     art = FakeArt()
     p = tmp_path / "a.jpg"
@@ -121,3 +133,71 @@ def test_calls_are_serialized():
     [t.start() for t in ts]
     [t.join() for t in ts]
     assert seen == ["start", "end", "start", "end"]
+
+
+# -- turn on (Wake-on-LAN) ----------------------------------------------------
+
+from curator.tv import NO_MAC, normalize_mac, send_magic_packet  # noqa: E402
+
+
+def test_normalize_mac():
+    assert normalize_mac("aa-bb-cc-dd-ee-ff") == "AA:BB:CC:DD:EE:FF"
+    assert normalize_mac("aabbccddeeff") == "AA:BB:CC:DD:EE:FF"
+    assert normalize_mac("not a mac") is None and normalize_mac("") is None
+
+
+def test_magic_packet_is_ff_then_mac_16_times():
+    rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    rx.bind(("127.0.0.1", 0))
+    rx.settimeout(2)
+    send_magic_packet("AA:BB:CC:DD:EE:FF", targets=("127.0.0.1",), ports=(rx.getsockname()[1],))
+    data, _ = rx.recvfrom(200)
+    rx.close()
+    assert data == b"\xff" * 6 + bytes.fromhex("AABBCCDDEEFF") * 16
+
+
+def test_wake_without_a_known_address_says_what_to_do(tmp_path):
+    tv = SamsungTV("192.168.1.20", mac_file=tmp_path / "mac.txt")
+    with pytest.raises(TVUnavailable) as e:
+        tv.wake()
+    assert str(e.value) == NO_MAC
+
+
+def test_wake_sends_to_broadcast_the_tv_and_the_subnet(tmp_path, monkeypatch):
+    sent = []
+    monkeypatch.setattr("curator.tv.send_magic_packet", lambda mac, targets: sent.append((mac, list(targets))))
+    SamsungTV("192.168.1.20", mac="aa:bb:cc:dd:ee:ff", mac_file=tmp_path / "m").wake()
+    assert sent == [("AA:BB:CC:DD:EE:FF", ["255.255.255.255", "192.168.1.20", "192.168.1.205"])]
+
+
+def test_curator_learns_the_address_while_the_tv_is_on_and_keeps_it(tmp_path):
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(5)
+    mac_file = tmp_path / "data" / "tv-mac.txt"
+    calls = []
+
+    def lookup():
+        calls.append(1)
+        return "aa:bb:cc:dd:ee:ff"
+
+    tv = SamsungTV("127.0.0.1", port=srv.getsockname()[1], mac_file=mac_file, mac_lookup=lookup)
+    assert tv.is_available() is True
+    assert mac_file.read_text().strip() == "AA:BB:CC:DD:EE:FF"
+    assert tv.is_available() is True and len(calls) == 1  # asked only once
+    # A new client (for example after a restart) reads the saved address.
+    assert SamsungTV("127.0.0.1", mac_file=mac_file).known_mac() == "AA:BB:CC:DD:EE:FF"
+    srv.close()
+
+
+def test_a_failed_address_lookup_does_not_break_is_available(tmp_path):
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(5)
+
+    def lookup():
+        raise RuntimeError("no REST on this model")
+
+    tv = SamsungTV("127.0.0.1", port=srv.getsockname()[1], mac_file=tmp_path / "m", mac_lookup=lookup)
+    assert tv.is_available() is True and tv.known_mac() is None
+    srv.close()

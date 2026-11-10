@@ -43,6 +43,18 @@ def friendly_label(stem: str, when: float | None = None) -> str:
     return f"Photo, {time.strftime('%b', t)} {t.tm_mday}"
 
 
+def is_samsung_art(content_id: str) -> bool:
+    """Art from the Samsung Art Store has IDs that start with SAM. Photos on the TV start with MY_."""
+    return content_id.upper().startswith("SAM")
+
+
+def art_kind(content_id: str, added_here: bool) -> str:
+    """mine = added with Curator. other = another photo on the TV. samsung = Art Store art."""
+    if is_samsung_art(content_id):
+        return "samsung"
+    return "mine" if added_here else "other"
+
+
 def lan_address() -> str | None:
     """The address other devices on the Wi-Fi use to reach this machine. No packet is sent."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -233,7 +245,9 @@ def create_app(
             chosen = mark if (mark and mark.content_id == i.id and i.current) else None
             out.append(dict(
                 id=i.id, name=(piece.name if piece else i.name) or i.id,
-                mine=piece is not None, current=i.current, thumb=f"/api/art/{i.id}/thumb",
+                mine=piece is not None, kind=art_kind(i.id, piece is not None),
+                removable=not is_samsung_art(i.id),
+                current=i.current, thumb=f"/api/art/{i.id}/thumb",
                 chosen_by=chosen.by if chosen else None,
                 chosen_at=chosen.at if chosen else None,
                 queued=(waiting == i.id),
@@ -274,17 +288,22 @@ def create_app(
 
     @app.delete("/api/art/<cid>")
     def art_delete(cid: str):
+        """Remove a photo from the TV. Samsung's own art stays, because only the TV can remove it."""
+        if is_samsung_art(cid):
+            return err(403, "samsung_art", "Samsung art cannot be removed here. Use the TV.")
         piece = library.get(cid)
-        if piece is None:
-            return err(403, "not_yours", "Curator can remove only photos that it added.")
         try:
+            if piece is None and cid not in {i.id for i in tv_art()}:
+                return err(404, "not_found", "That photo is not on the TV.")
             tv.delete(cid)
         except TVUnavailable:
             return err(503, "tv_off", "The TV is off or cannot be reached.")
         library.remove(cid)
         forget_art()
-        if piece.thumb_path:
+        if piece and piece.thumb_path:
             Path(piece.thumb_path).unlink(missing_ok=True)
+        if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", cid):
+            (tv_thumbs / f"{cid}.jpg").unlink(missing_ok=True)
         return jsonify(ok=True)
 
     @app.post("/api/jobs/<int:job_id>/retry")
@@ -293,6 +312,20 @@ def create_app(
         if worker:
             worker.wake()
         return jsonify(ok=True)
+
+    @app.post("/api/tv/wake")
+    def tv_wake():
+        """Ask the TV to turn on (Wake-on-LAN). It sends one packet and does not wait for the TV."""
+        if tv_online():
+            return jsonify(sent=False, already_on=True)
+        try:
+            tv.wake()
+        except TVUnavailable as e:
+            return err(409, "no_mac", str(e))
+        with cache_lock:
+            cache["at"] = 0.0
+        forget_art()
+        return jsonify(sent=True, already_on=False), 202
 
     @app.post("/api/dev/tv")
     def dev_tv():

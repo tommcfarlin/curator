@@ -5,6 +5,9 @@ port = 8002
 # The pairing token is saved here after the first Allow on the TV.
 token_file = "config/token.txt"
 name = "Curator"
+# Optional. The Wi-Fi hardware address of the TV, for "Turn on the TV".
+# Curator learns it by itself while the TV is on, so you can leave this out.
+# mac = "AA:BB:CC:DD:EE:FF"
 
 [web]
 bind = "0.0.0.0"

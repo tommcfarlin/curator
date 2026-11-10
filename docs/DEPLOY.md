@@ -14,7 +14,7 @@ The Pi is a Raspberry Pi 4 with Debian 12 and Python 3.11. Its user is `pi`, and
 ## Before the first deploy
 
 1. On the router, give the Pi a fixed address (192.168.1.10). Curator listens on that address only, so it stays off Tailscale.
-2. Finish [TV-TEST.md](TV-TEST.md), so that `config/token.txt` exists on the Mac.
+2. Finish [TV-TEST.md](TV-TEST.md). If the TV gave a token, `config/token.txt` exists on the Mac. Some TVs give no token (the 2021 Frame in the first test gave none). Curator works without it.
 
 ## First deploy
 
@@ -24,11 +24,13 @@ On the Pi, make the folder once. If sudo asks for your password, type it:
 sudo install -d -o pi -g pi /opt/curator
 ```
 
-On the Mac, copy the code and the token:
+On the Mac, copy the code:
 
 ```bash
-deploy/push.sh --token
+deploy/push.sh
 ```
+
+If `config/token.txt` exists on the Mac, use `deploy/push.sh --token` to copy the token too.
 
 On the Pi, install and start the service:
 

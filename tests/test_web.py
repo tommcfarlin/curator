@@ -83,17 +83,32 @@ def test_art_list_marks_mine_vs_samsung(env):
 
 def test_cannot_delete_samsung_art(env):
     r = env.client.delete("/api/art/SAM-1")
-    assert r.status_code == 403 and r.json["error"] == "not_yours"
+    assert r.status_code == 403 and r.json["error"] == "samsung_art"
     assert any(a.id == "SAM-1" for a in env.tv.list_art())
+    sam = [a for a in env.client.get("/api/art").json["art"] if a["id"] == "SAM-1"][0]
+    assert sam["kind"] == "samsung" and sam["removable"] is False
 
 
 def test_can_delete_own_art_and_unknown_id_is_refused(env):
     post(env)
     run_worker(env)
-    cid = [a for a in env.client.get("/api/art").json["art"] if a["mine"]][0]["id"]
+    row = [a for a in env.client.get("/api/art").json["art"] if a["mine"]][0]
+    assert row["kind"] == "mine" and row["removable"] is True
+    cid = row["id"]
     assert env.client.delete(f"/api/art/{cid}").status_code == 200
     assert all(a.id != cid for a in env.tv.list_art())
-    assert env.client.delete("/api/art/nope").status_code == 403
+    assert env.client.delete("/api/art/nope").status_code == 404
+
+
+def test_can_delete_a_photo_that_curator_did_not_add(env, tmp_path):
+    """A photo put on the TV by another app is listed as "other" and can be removed."""
+    img = tmp_path / "other.jpg"
+    Image.new("RGB", (64, 36), "red").save(img)
+    cid = env.tv.upload(img)
+    row = [a for a in env.client.get("/api/art").json["art"] if a["id"] == cid][0]
+    assert row["kind"] == "other" and row["mine"] is False and row["removable"] is True
+    assert env.client.delete(f"/api/art/{cid}").status_code == 200
+    assert all(a.id != cid for a in env.tv.list_art())
 
 
 def current(env):
@@ -213,3 +228,24 @@ def test_tv_thumbnails_are_cached_on_disk(env):
     assert env.client.get("/api/art/SAM-1/thumb").status_code == 200  # from disk, TV not needed
     assert calls == ["SAM-1"]
     assert env.client.get("/api/art/..%2Fx/thumb").status_code in (404, 503)
+
+
+def test_turn_on_the_tv(env):
+    env.tv.online = False
+    r = env.client.post("/api/tv/wake")
+    assert r.status_code == 202 and r.json["sent"] is True
+    assert env.client.get("/api/status").json["tv_online"] is True
+    again = env.client.post("/api/tv/wake")
+    assert again.status_code == 200 and again.json["already_on"] is True
+
+
+def test_turn_on_explains_a_missing_address(env):
+    from curator.tv import NO_MAC, TVUnavailable
+
+    def no_mac():
+        raise TVUnavailable(NO_MAC)
+
+    env.tv.online = False
+    env.tv.wake = no_mac
+    r = env.client.post("/api/tv/wake")
+    assert r.status_code == 409 and r.json["error"] == "no_mac" and "once" in r.json["message"]
