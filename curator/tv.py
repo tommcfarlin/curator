@@ -12,6 +12,7 @@ import socket
 import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Protocol
@@ -63,6 +64,28 @@ def send_magic_packet(mac: str, targets=("255.255.255.255",), ports=(9, 7)) -> N
                     pass  # one bad route must not stop the others
 
 
+log = logging.getLogger("curator.tv")
+
+
+def _port_answers(host: str, port: int, timeout: float) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def hosts_with_port(host: str, port: int, timeout: float = 0.7) -> list[str]:
+    """Return the addresses near `host` (same x.y.z) where `port` answers."""
+    parts = host.split(".")
+    if len(parts) != 4 or not all(p.isdigit() for p in parts):
+        return []
+    near = [".".join(parts[:3] + [str(i)]) for i in range(1, 255)]
+    with ThreadPoolExecutor(max_workers=64) as pool:
+        hits = list(pool.map(lambda h: _port_answers(h, port, timeout), near))
+    return [h for h, ok in zip(near, hits) if ok]
+
+
 NO_MAC = ("Curator does not know the hardware address of the TV yet. "
           "Turn the TV on once with the remote. Curator learns the address then.")
 
@@ -96,7 +119,10 @@ class SamsungTV:
     def __init__(self, host: str, port: int = 8002, token_file: Optional[Path] = None,
                  name: str = "Curator", timeout: float = 15.0, art_factory=None,
                  key_press_delay: float = 0.0, mac: str = "", mac_file: Optional[Path] = None,
-                 mac_lookup=None):
+                 mac_lookup=None, scan=None, mac_of=None):
+        self._scan = scan or hosts_with_port
+        self._mac_of = mac_of or self._ask_host_for_mac
+        self._search_tried = 0.0
         self.mac_setting = normalize_mac(mac)
         self.mac_file = Path(mac_file) if mac_file else None
         self._mac_lookup = mac_lookup or self._ask_tv_for_mac
@@ -170,9 +196,31 @@ class SamsungTV:
             with socket.create_connection((self.host, self.port), timeout=2):
                 pass
         except OSError:
-            return False
+            return self._find_moved_tv()
         self._learn_mac()
         return True
+
+    def _find_moved_tv(self) -> bool:
+        """The router can give the TV a new address. Search for the TV by its
+        hardware address, at most one time each minute. It needs a known address
+        (see `known_mac`) and a TV that is on."""
+        mac = self.known_mac()
+        if not mac or time.monotonic() - self._search_tried < 60:
+            return False
+        self._search_tried = time.monotonic()
+        for host in self._scan(self.host, self.port):
+            if host == self.host:
+                continue
+            try:
+                found = normalize_mac(self._mac_of(host) or "")
+            except Exception:
+                continue
+            if found == mac:
+                log.warning("The TV moved from %s to %s. Reserve an address for the TV "
+                            "on the router.", self.host, host)
+                self.host = host
+                return True
+        return False
 
     # -- turn on ------------------------------------------------------------
 
@@ -183,10 +231,13 @@ class SamsungTV:
             return normalize_mac(self.mac_file.read_text())
         return None
 
-    def _ask_tv_for_mac(self) -> Optional[str]:
+    def _ask_host_for_mac(self, host: str) -> Optional[str]:
         from samsungtvws import SamsungTVWS
-        info = SamsungTVWS(self.host, timeout=3).rest_device_info()
+        info = SamsungTVWS(host, timeout=3).rest_device_info()
         return (info.get("device") or {}).get("wifiMac")
+
+    def _ask_tv_for_mac(self) -> Optional[str]:
+        return self._ask_host_for_mac(self.host)
 
     def _learn_mac(self) -> None:
         """While the TV is on, ask it for its hardware address once and keep it."""

@@ -54,6 +54,12 @@ On the Pi:
 /opt/curator/deploy/install.sh
 ```
 
+## If the TV gets a new address
+
+The router can give the TV a new address. Curator then searches the home network for the TV by its hardware address, at most one time each minute. The TV must be on. Curator uses the new address until it restarts, and it writes a line in the log.
+
+Curator knows the hardware address after it reaches the TV one time (`data/tv-mac.txt`). To stop the address changes, reserve an address for the TV on the router and put it in `config/local.toml`.
+
 ## Check the service
 
 On the Pi:

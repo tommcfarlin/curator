@@ -201,3 +201,50 @@ def test_a_failed_address_lookup_does_not_break_is_available(tmp_path):
     tv = SamsungTV("127.0.0.1", port=srv.getsockname()[1], mac_file=tmp_path / "m", mac_lookup=lookup)
     assert tv.is_available() is True and tv.known_mac() is None
     srv.close()
+
+
+def _closed_port():
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def test_finds_the_tv_at_a_new_address_by_its_hardware_address():
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(5)
+    port = srv.getsockname()[1]
+    macs = {"127.0.0.1": "aa:bb:cc:dd:ee:ff", "127.0.0.3": "11:22:33:44:55:66"}
+    scans = []
+
+    def scan(host, p):
+        scans.append((host, p))
+        return ["127.0.0.3", "127.0.0.1"]
+
+    tv = SamsungTV("127.0.0.9", port, mac="AA:BB:CC:DD:EE:FF", scan=scan, mac_of=macs.get)
+    assert tv.is_available() is True and tv.host == "127.0.0.1"
+    assert tv.is_available() is True and len(scans) == 1  # the new address answers
+    srv.close()
+
+
+def test_does_not_move_to_a_device_with_a_different_hardware_address():
+    scans = []
+
+    def scan(host, p):
+        scans.append(host)
+        return ["127.0.0.3"]
+
+    tv = SamsungTV("127.0.0.1", _closed_port(), mac="AA:BB:CC:DD:EE:FF", scan=scan,
+                   mac_of=lambda h: "11:22:33:44:55:66")
+    assert tv.is_available() is False and tv.host == "127.0.0.1"
+    assert tv.is_available() is False and len(scans) == 1  # one search each minute
+
+
+def test_does_not_search_without_a_known_hardware_address():
+    tv = SamsungTV("127.0.0.1", _closed_port(), scan=lambda h, p: 1 / 0)
+    assert tv.is_available() is False
+
+
+def test_hosts_with_port_ignores_a_name_that_is_not_an_address():
+    from curator.tv import hosts_with_port
+    assert hosts_with_port("tv.local", 8002) == []
