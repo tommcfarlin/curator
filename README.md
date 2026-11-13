@@ -72,6 +72,7 @@ To open the page from your phone, add `--bind 0.0.0.0` to the last command. Then
 ## Good to know
 
 - Curator cannot turn the TV on. When the screen is black, the TV leaves the network. Turn the TV on with the remote. If the TV is off, photos wait in the queue. Curator sends them as soon as the TV answers.
+- A TV in standby can look present on the network. The router still lists it, and its hardware address still answers. But the TV does not answer ping, and its ports 8001 and 8002 do not answer. Curator then shows that the TV is off. This is correct. Press the power button on the remote and wait 10 seconds.
 - Turn off Night Mode in the TV's Art Mode options. If Night Mode is on, the TV turns the screen off in a dark room, and Curator cannot reach it.
 - Reserve fixed addresses for the TV and the Pi on your router. Curator can find a TV that changes address, but a fixed address is more reliable.
 - The web page has no login. Keep Curator on your home network.

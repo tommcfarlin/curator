@@ -35,6 +35,11 @@ data_dir = "data"
 """
 
 
+NO_ANSWER = ("Setup cannot ask its questions, because there is no terminal to answer them. "
+             "Run it again with the TV address, for example: "
+             "python -m curator.setup --tv-host 192.168.1.20")
+
+
 def tv_name(host: str) -> str:
     """The model name the TV reports, or "" if it does not say."""
     try:
@@ -84,11 +89,17 @@ def main(argv=None) -> int:
         if not tvs:
             print("No TV answered. Make sure that the TV is on and on the same network.")
         default = tvs[0][0] if tvs else ""
-        choice = ask("TV address, or a number from the list", default)
-        if choice.isdigit() and 1 <= int(choice) <= len(tvs):
-            choice = tvs[int(choice) - 1][0]
-        tv_host = choice
-        bind = ask("Address for Curator to listen on", bind)
+        try:
+            choice = ask("TV address, or a number from the list", default)
+            if choice.isdigit() and 1 <= int(choice) <= len(tvs):
+                choice = tvs[int(choice) - 1][0]
+            tv_host = choice
+            bind = ask("Address for Curator to listen on", bind)
+        except EOFError:
+            # No terminal (a script, an AI agent, `</dev/null`): nobody can answer.
+            print()
+            print(NO_ANSWER + (f" The search found {default}." if default else ""), file=sys.stderr)
+            return 1
     if not tv_host:
         print("Curator needs the TV address.", file=sys.stderr)
         return 1

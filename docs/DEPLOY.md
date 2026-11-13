@@ -58,7 +58,7 @@ cd /opt/curator && python3 -m venv .venv && .venv/bin/pip install -q -r requirem
 .venv/bin/python -m curator.setup --tv-host 192.168.1.20 --bind 192.168.1.10
 ```
 
-Replace the two addresses with the address of your TV and the address of your Pi. Then run `deploy/install.sh`. It keeps the file that setup wrote.
+Replace the two addresses with the address of your TV and the address of your Pi. If setup runs without a terminal and without `--tv-host`, it cannot ask its questions. It prints the TVs that it found, tells you to use `--tv-host`, and stops with exit code 1. It does not write a file. Then run `deploy/install.sh`. It keeps the file that setup wrote.
 
 ## Update
 

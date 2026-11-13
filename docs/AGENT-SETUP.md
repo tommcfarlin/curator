@@ -116,6 +116,8 @@ cd /opt/curator && .venv/bin/python -m curator.setup
 
 Setup searches the /24 network for devices that answer on TCP port 8002. For each one, it reads the model name from the TV. It prints a numbered list. Ask the person which line is their TV. Type the number, or press Enter for the first one. Then accept the listen address, or type PI_ADDRESS.
 
+Way A needs a terminal that can type answers. If your shell has no terminal, setup prints the list, tells you to use `--tv-host`, and stops with exit code 1. It does not write a file. Then use Way B with an address from the list.
+
 Make sure that the output ends with `Wrote` and the path `config/local.toml`.
 
 Way B, without questions. When you know the TV address, use this way. To find the TV address, do one of these:
@@ -177,6 +179,7 @@ Tell the person to do these. You cannot do them.
 | Problem | Cause and fix |
 | --- | --- |
 | `tv_online` is false | The TV is off or the screen is black. The TV leaves the network in standby and Curator cannot turn it on. Ask the person to turn the TV on with the remote. When the TV answers, Curator sends the photos that wait in the queue. |
+| The Pi sees the TV, but `tv_online` is false | The TV is in standby. The sign is this: `ip neigh show TV_ADDRESS` shows the TV hardware address as REACHABLE, but `ping` gets no reply and TCP ports 8001 and 8002 time out. In standby, the Wi-Fi part of the TV still answers address requests, and the rest of the TV sleeps. An entry in the router list or in `ip neigh` does not show that the TV is on. Curator is correct. Ask the person to press the power button on the remote. The ports answer about 10 seconds later. To make sure, run `curl -s http://TV_ADDRESS:8001/api/v2/` on the Pi. A TV that is on answers with `"PowerState":"on"`. |
 | `tv_online` stays false with the TV on | The TV address is wrong. Run `cd /opt/curator && .venv/bin/python -m curator.setup --force`. Then run `sudo systemctl restart curator`. Curator also searches for the TV by its hardware address one time each minute, so a new TV address is often found without help. |
 | Setup finds no TV | The TV is off, or the TV is on a different network or VLAN, or guest Wi-Fi isolation blocks the Pi. Put the Pi and the TV on the same network. Turn the TV on. Run setup again. Or use the TV address from the TV menu with `--tv-host`. |
 | The page does not open on the phone | The bind address is wrong, or the phone is on a guest network. Make sure that `bind` in `/opt/curator/config/local.toml` is PI_ADDRESS. Put the phone on the same network as the Pi. |
