@@ -20,6 +20,13 @@ from typing import Optional, Protocol
 from PIL import Image
 
 
+def _close_quietly(art) -> None:
+    try:
+        art.close()
+    except Exception:
+        pass
+
+
 class TVUnavailable(Exception):
     """The TV is off, unreachable, or refused the connection."""
 
@@ -100,7 +107,8 @@ class SamsungTV:
     def __init__(self, host: str, port: int = 8002, token_file: Optional[Path] = None,
                  name: str = "Curator", timeout: float = 15.0, art_factory=None,
                  key_press_delay: float = 0.0, mac: str = "", mac_file: Optional[Path] = None,
-                 mac_lookup=None, scan=None, mac_of=None):
+                 mac_lookup=None, scan=None, mac_of=None, deadline: float = 90.0):
+        self.deadline = deadline  # the longest time one TV request can take, uploads included
         self._scan = scan or hosts_with_port
         self._mac_of = mac_of or self._ask_host_for_mac
         self._search_tried = 0.0
@@ -139,6 +147,11 @@ class SamsungTV:
                 art = self._new_art()
             except ImportError as e:
                 raise TVUnavailable(f"samsungtvws is not installed: {e}") from e
+            # The library waits for its reply in a loop that skips other TV messages,
+            # so its socket timeout can never fire. Close the connection at a hard limit.
+            watchdog = threading.Timer(self.deadline, lambda: _close_quietly(art))
+            watchdog.daemon = True
+            watchdog.start()
             try:
                 art.open()
                 self._protect_token()
@@ -152,10 +165,8 @@ class SamsungTV:
                     raise TVUnavailable(DENIED) from e
                 raise TVUnavailable(f"The TV did not accept the request: {type(e).__name__}: {e}") from e
             finally:
-                try:
-                    art.close()
-                except Exception:
-                    pass
+                watchdog.cancel()
+                _close_quietly(art)
 
     def _protect_token(self) -> None:
         """The token lets anyone on the network control the TV. Only the owner may read it."""
