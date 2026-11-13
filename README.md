@@ -100,4 +100,4 @@ python3 -m venv .venv
 
 Curator is released under the MIT License. See the [LICENSE](LICENSE) file.
 
-Curator uses the `samsungtvws` library, which is under the LGPL-3.0 license. See `docs/DESIGN.md` for the details.
+Curator uses the `samsungtvws` library, which is under the LGPL-3.0 license. See [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) for how Curator works and the licenses of its dependencies.

@@ -30,8 +30,6 @@ def process_one(queue: RetryQueue, tv: TV, library: Library, thumbs_dir: Path) -
         return True
     try:
         content_id = tv.upload(path)
-        if job.show_now:
-            tv.select(content_id)
     except TVUnavailable as exc:
         queue.mark_failed_attempt(job.id, str(exc))
         return False
@@ -40,9 +38,18 @@ def process_one(queue: RetryQueue, tv: TV, library: Library, thumbs_dir: Path) -
         queue.mark_failed_attempt(job.id, f"{type(exc).__name__}: {exc}")
         return False
     library.add(content_id, job.name or path.stem, thumbs_dir / path.name)
-    if job.show_now:
-        library.set_mark(content_id, job.by)
     queue.mark_done(job.id)
+    if not job.show_now:
+        return True
+    try:
+        tv.select(content_id)
+    except Exception:
+        # The photo is on the TV now. Retry only the show step, so a retry
+        # never uploads the same photo a second time.
+        log.warning("upload worked but show failed; queued a show request")
+        queue.enqueue_show(content_id, job.name, by=job.by)
+        return False
+    library.set_mark(content_id, job.by)
     return True
 
 

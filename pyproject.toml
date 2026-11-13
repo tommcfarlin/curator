@@ -1,7 +1,7 @@
 [project]
 name = "curator"
-version = "0.1.0"
-description = "Upload your own images from a phone to a Samsung The Frame, from a Raspberry Pi."
+version = "1.0.0"
+description = "Send your own photos to the Art Mode of a Samsung The Frame, from a Raspberry Pi."
 requires-python = ">=3.11"
 dependencies = ["Pillow>=10", "Flask>=3,<4", "waitress>=3", "samsungtvws>=3.0.7,<4"]
 

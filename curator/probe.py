@@ -1,4 +1,4 @@
-"""Supervised checks of the real TV. See docs/TV-TEST.md.
+"""Manual checks against a real TV. Run them with the TV on, from the Curator folder.
 
   python -m curator.probe                 Step 1. Read only: pair, then list the art.
   python -m curator.probe --upload-test   Step 2. Upload one test card. It does not show it.

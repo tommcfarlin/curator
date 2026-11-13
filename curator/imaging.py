@@ -72,7 +72,7 @@ def prepare_image(
     return dst
 
 
-# Quality rules. The phone page uses the same numbers (design/prototype).
+# Quality rules. The phone page uses the same numbers.
 MIN_SIZE = (1920, 1080)  # smallest size that we call acceptable
 HEAVY_TRIM = 0.35  # warn when crop mode cuts more than this share of the photo
 

@@ -2,4 +2,4 @@ Pillow>=10.1   # font_size in ImageDraw.text
 Flask>=3,<4
 waitress>=3
 segno>=1.6,<2   # BSD, draws the QR code
-samsungtvws>=3.0.7,<4   # LGPL-3.0, see docs/DESIGN.md
+samsungtvws>=3.0.7,<4   # LGPL-3.0, see docs/HOW-IT-WORKS.md

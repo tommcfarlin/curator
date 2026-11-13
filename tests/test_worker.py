@@ -1,5 +1,4 @@
 from curator.queue import DONE, FAILED, PENDING
-from curator.tv import FakeTV
 from curator.worker import SHOW_EXPIRED, SHOW_MAX_AGE, process_one
 from PIL import Image
 
@@ -131,3 +130,24 @@ def test_waiting_jobs_run_when_the_tv_comes_back(env):
     assert env.w.retry_if_tv_came_back() is True
     assert env.q.next_due().id == jid
     assert env.w.retry_if_tv_came_back() is False  # only on the change
+
+
+def test_show_failure_after_upload_does_not_upload_again(env):
+    jid = make_job(env, show_now=True, by="Anna")
+    uploads = []
+    real_upload, real_select = env.tv.upload, env.tv.select
+    env.tv.upload = lambda p: uploads.append(p) or real_upload(p)
+
+    def select_fails(cid):
+        raise ConnectionError("the TV closed the connection")
+
+    env.tv.select = select_fails
+    assert process_one(env.q, env.tv, env.lib, env.s.thumbs_dir) is False
+    assert env.q.get(jid).status == DONE and len(uploads) == 1
+    cid = env.lib.list_pieces()[0].content_id
+    env.tv.select = real_select
+    env.q.retry_now()
+    assert process_one(env.q, env.tv, env.lib, env.s.thumbs_dir) is True
+    assert len(uploads) == 1
+    assert [i for i in env.tv.list_art() if i.current][0].id == cid
+    assert env.lib.get_mark().by == "Anna"

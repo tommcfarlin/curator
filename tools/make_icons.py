@@ -1,49 +1,65 @@
-"""Draw the app icons into curator/static. Run on a Mac: python tools/make_icons.py curator/static
+"""Draw the app icons into curator/static: python tools/make_icons.py curator/static
 
-The icon is the framed picture emoji, U+1F5BC, from the Apple Color Emoji font.
-Apple's emoji art is licensed for use on Apple devices. That is fine for a private
-home app. Before the repo goes public, draw the same icon from Twemoji (CC BY 4.0)
-or Noto Emoji (Apache 2.0) instead.
+The icon is a framed landscape (a sun over hills), drawn here with Pillow.
+It uses no font or outside artwork, so it is under the same license as Curator.
 """
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
-EMOJI = "\U0001F5BC️"
-FONT = "/System/Library/Fonts/Apple Color Emoji.ttc"
-BG_TOP, BG_BOTTOM = (255, 255, 255), (229, 229, 234)  # Apple system grays
-
-
-def emoji_image() -> Image.Image:
-    font = ImageFont.truetype(FONT, 160)  # the only size this bitmap font has
-    im = Image.new("RGBA", (240, 240), (0, 0, 0, 0))
-    ImageDraw.Draw(im).text((120, 120), EMOJI, font=font, embedded_color=True, anchor="mm")
-    return im.crop(im.getbbox())
+S = 1024          # drawing size; the icons are scaled down from this
+BG = (28, 28, 30)  # the dark gray of the app header
 
 
-def icon(n: int, fill: float) -> Image.Image:
-    """A square icon. `fill` is the share of the width the emoji takes."""
-    S = 1024
-    bg = Image.new("RGB", (S, S))
-    d = ImageDraw.Draw(bg)
-    for y in range(S):
-        t = y / (S - 1)
-        d.line([(0, y), (S, y)], fill=tuple(round(a + (b - a) * t) for a, b in zip(BG_TOP, BG_BOTTOM)))
-    e = emoji_image()
-    w = int(S * fill)
-    h = round(e.height * w / e.width)
-    e = e.resize((w, h), Image.LANCZOS)
-    bg.paste(e, ((S - w) // 2, (S - h) // 2), e)
-    return bg.resize((n, n), Image.LANCZOS)
+def lerp(a, b, t):
+    return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
+
+
+def picture(w: int, h: int) -> Image.Image:
+    """The landscape inside the frame: a dusk sky, a sun and three hills."""
+    im = Image.new("RGB", (w, h))
+    d = ImageDraw.Draw(im)
+    top, bottom = (250, 178, 122), (150, 104, 150)
+    for y in range(h):
+        d.line([(0, y), (w, y)], fill=lerp(top, bottom, y / (h - 1)))
+    r = int(w * 0.13)
+    cx, cy = int(w * 0.68), int(h * 0.36)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 226, 170))
+    hills = [
+        (0.58, (104, 76, 134), [(0, 0.10), (0.25, 0.0), (0.5, 0.08), (0.8, -0.02), (1, 0.06)]),
+        (0.70, (70, 52, 104), [(0, 0.0), (0.3, 0.10), (0.6, -0.02), (1, 0.08)]),
+        (0.82, (40, 30, 66), [(0, 0.06), (0.4, -0.04), (0.75, 0.06), (1, 0.0)]),
+    ]
+    for base, color, pts in hills:
+        poly = [(int(x * w), int((base + dy) * h)) for x, dy in pts]
+        d.polygon([(0, h)] + poly + [(w, h)], fill=color)
+    return im
+
+
+def master(frame_share: float) -> Image.Image:
+    """The full icon at S x S. `frame_share` is the share of the width the frame takes."""
+    im = Image.new("RGB", (S, S), BG)
+    d = ImageDraw.Draw(im)
+    fw = int(S * frame_share)
+    fh = int(fw * 0.80)
+    x0, y0 = (S - fw) // 2, (S - fh) // 2
+    border = int(fw * 0.075)
+    d.rounded_rectangle([x0, y0, x0 + fw, y0 + fh], radius=int(fw * 0.04), fill=(236, 236, 240))
+    mat = int(fw * 0.02)
+    inner = (x0 + border, y0 + border, x0 + fw - border, y0 + fh - border)
+    d.rectangle([inner[0] - mat, inner[1] - mat, inner[2] + mat, inner[3] + mat], fill=(200, 200, 206))
+    im.paste(picture(inner[2] - inner[0], inner[3] - inner[1]), inner[:2])
+    return im
 
 
 def main(out: Path) -> None:
-    icon(180, 0.70).save(out / "apple-touch-icon.png")
-    icon(192, 0.70).save(out / "icon-192.png")
-    icon(512, 0.70).save(out / "icon-512.png")
-    icon(512, 0.56).save(out / "icon-maskable-512.png")  # Android crops this to a circle
-    icon(64, 0.84).save(out / "favicon.png")
+    regular, maskable, favicon = master(0.74), master(0.58), master(0.92)
+    regular.resize((180, 180), Image.LANCZOS).save(out / "apple-touch-icon.png")
+    regular.resize((192, 192), Image.LANCZOS).save(out / "icon-192.png")
+    regular.resize((512, 512), Image.LANCZOS).save(out / "icon-512.png")
+    maskable.resize((512, 512), Image.LANCZOS).save(out / "icon-maskable-512.png")  # Android crops it
+    favicon.resize((64, 64), Image.LANCZOS).save(out / "favicon.png")
 
 
 if __name__ == "__main__":
