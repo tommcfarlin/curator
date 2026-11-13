@@ -376,7 +376,9 @@ $('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
 $('#delno').onclick=()=>sheetMode(false);
 $('#show').onclick=async()=>{closeSheet();const r=await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({by:myName,name:sel.name})});if(r.ok)watchJob(r.json.job);else toast(r.json.message||'Curator did not take the request.','bad');loadArt()};
 $('#del').onclick=()=>sheetMode(true);
-$('#delyes').onclick=async()=>{closeSheet();await api(`/api/art/${encodeURIComponent(sel.id)}`,{method:'DELETE'});loadArt()};
+$('#delyes').onclick=async()=>{closeSheet();const id=sel.id;let r;try{r=await api(`/api/art/${encodeURIComponent(id)}`,{method:'DELETE'})}catch(e){r=null}
+  if(r&&r.ok){art=art.filter(a=>a.id!==id);artKey='';renderLib();toast('Removed from the TV.')}
+  else toast((r&&r.json&&r.json.message)||'Curator could not reach the TV. The photo is still on it.','bad');loadArt()};
 
 async function loadStatus(){try{const r=await api('/api/status');if(r.ok){jobs=r.json.jobs;tvOnline=r.json.tv_online;fake=r.json.fake;renderTv();renderJobs();reportWatched()}}catch(e){}}
 let artKey='';
