@@ -1,68 +1,84 @@
-# Deploy Curator to the Pi
+# Install Curator on a Raspberry Pi
 
-Do this after the first test on the real TV ([TV-TEST.md](TV-TEST.md)) passes. Each step that connects to the Pi needs the owner's approval first.
+This guide installs Curator on a Raspberry Pi as a service that starts with the Pi. It takes about 15 minutes.
 
-The Pi is a Raspberry Pi 4 with Debian 12 and Python 3.11. Its user is `pi`, and its home Wi-Fi address is 192.168.1.10. The Mac reaches it with the SSH alias `curator-pi`.
+## What you need
 
-## Files
+- A Samsung The Frame on your home network. Curator was tested on a 2021 Frame (Tizen 6).
+- A Raspberry Pi on the same network, with Raspberry Pi OS (Debian 12 or newer) and Python 3.11 or newer.
+- A terminal on the Pi, through SSH or with a keyboard and a monitor.
 
-- `deploy/push.sh` runs on the Mac. It copies the code to `/opt/curator` on the Pi. It never copies `config/local.toml`, `data/` or `.venv/`. With `--token`, it also copies the TV token.
-- `deploy/install.sh` runs on the Pi. It creates the virtual environment, installs the requirements, and installs the systemd service. It is safe to run again after each update.
-- `deploy/pi.toml` is the settings file for the Pi. `install.sh` copies it to `config/local.toml` once.
-- `deploy/curator.service` is the systemd service. It runs as `pi`. It can write only `/opt/curator/data` and `/opt/curator/config`.
+## Before you start
 
-## Before the first deploy
+1. Turn the TV on.
+2. On your router, reserve a fixed address for the TV and for the Pi. If the router changes the TV address later, Curator searches for the TV, but a fixed address is more reliable.
+3. On the TV, turn off Night Mode in the Art Mode options. If Night Mode is on, the TV turns the screen off in a dark room and Curator cannot reach it.
 
-1. On the router, give the Pi a fixed address (192.168.1.10). Curator listens on that address only, so it stays off Tailscale.
-2. Finish [TV-TEST.md](TV-TEST.md). If the TV gave a token, `config/token.txt` exists on the Mac. Some TVs give no token (the 2021 Frame in the first test gave none). Curator works without it.
+## Install
 
-## First deploy
-
-On the Pi, make the folder once. If sudo asks for your password, type it:
+On the Pi, get the code:
 
 ```bash
-sudo install -d -o pi -g pi /opt/curator
+sudo apt install -y git python3-venv
 ```
-
-On the Mac, copy the code:
 
 ```bash
-deploy/push.sh
+sudo git clone https://github.com/tommcfarlin/curator.git /opt/curator
 ```
 
-If `config/token.txt` exists on the Mac, use `deploy/push.sh --token` to copy the token too.
+```bash
+sudo chown -R "$(id -un):$(id -gn)" /opt/curator
+```
 
-On the Pi, install and start the service:
+Run the install script:
 
 ```bash
 /opt/curator/deploy/install.sh
 ```
 
-On a phone on the home Wi-Fi, open `http://192.168.1.10:8080`. Settings in Curator shows a QR code for other phones.
+The script creates a Python environment and installs the requirements. The first time, it asks two questions. It searches the network for the TV and shows each one that it finds. Choose your TV. Then accept the address that Curator listens on.
 
-## Updates
+Then the script installs and starts the `curator` service. It uses sudo for this step. If sudo asks for your password, type it.
 
-On the Mac:
+## Pair with the TV
+
+On a phone on the home network, open the address that the setup printed, for example `http://192.168.1.10:8080`. The first time Curator connects, the TV can show an Allow prompt. Press Allow with the TV remote. Some TVs do not ask.
+
+In Curator, open Settings to see a QR code for other phones.
+
+## Answers without questions
+
+A script or an AI agent can give the answers on the command line. Run this before `install.sh`:
 
 ```bash
-deploy/push.sh
+cd /opt/curator && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt
 ```
 
-On the Pi:
+```bash
+.venv/bin/python -m curator.setup --tv-host 192.168.1.20 --bind 192.168.1.10
+```
+
+Replace the two addresses with the address of your TV and the address of your Pi. Then run `deploy/install.sh`. It keeps the file that setup wrote.
+
+## Update
 
 ```bash
-/opt/curator/deploy/install.sh
+cd /opt/curator && git pull && deploy/install.sh
+```
+
+## Change the settings
+
+The settings are in `/opt/curator/config/local.toml`. Git ignores this file. To start again, run `.venv/bin/python -m curator.setup --force`, then restart the service:
+
+```bash
+sudo systemctl restart curator
 ```
 
 ## If the TV gets a new address
 
-The router can give the TV a new address. Curator then searches the home network for the TV by its hardware address, at most one time each minute. The TV must be on. Curator uses the new address until it restarts, and it writes a line in the log.
+Curator learns the hardware address of the TV the first time that it reaches the TV. It saves the address in `data/tv-mac.txt`. If the TV address changes later, Curator searches the network for that hardware address, at most one time each minute. The TV must be on. To stop the changes, reserve an address for the TV on the router and put that address in `config/local.toml`.
 
-Curator knows the hardware address after it reaches the TV one time (`data/tv-mac.txt`). To stop the address changes, reserve an address for the TV on the router and put it in `config/local.toml`.
-
-## Check the service
-
-On the Pi:
+## Make sure that it runs
 
 ```bash
 systemctl status curator
@@ -74,4 +90,9 @@ journalctl -u curator -n 50
 
 ## The pairing token
 
-The TV gives one token to Curator after you press Allow. The Mac and the Pi use the same token, so the TV does not ask again. The token lets a device on the network control the TV art, so the file is readable by its owner only (mode 600). Git ignores it. If you lose it, run the pairing step in [TV-TEST.md](TV-TEST.md) again.
+If the TV gives Curator a token after you press Allow, Curator saves it in `config/token.txt`. The token lets a device on your network control the TV art, so only its owner can read the file. Git ignores it. If you lose it, delete the file and press Allow on the TV again.
+
+## Limits
+
+- Curator cannot turn the TV on. When the screen is black, the TV leaves the network. Turn the TV on with the remote. Photos that you send in the meantime wait. When the TV answers, Curator sends them.
+- The page has no login. Use Curator on your home network only.

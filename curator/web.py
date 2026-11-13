@@ -313,20 +313,6 @@ def create_app(
             worker.wake()
         return jsonify(ok=True)
 
-    @app.post("/api/tv/wake")
-    def tv_wake():
-        """Ask the TV to turn on (Wake-on-LAN). It sends one packet and does not wait for the TV."""
-        if tv_online():
-            return jsonify(sent=False, already_on=True)
-        try:
-            tv.wake()
-        except TVUnavailable as e:
-            return err(409, "no_mac", str(e))
-        with cache_lock:
-            cache["at"] = 0.0
-        forget_art()
-        return jsonify(sent=True, already_on=False), 202
-
     @app.post("/api/dev/tv")
     def dev_tv():
         """Switch the fake TV on or off. Exists only when the TV is fake."""

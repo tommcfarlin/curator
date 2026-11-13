@@ -54,10 +54,10 @@ def test_no_jobs_returns_false(env):
 
 
 def test_show_job_selects_and_records_who(env):
-    env.q.enqueue_show("SAM-3", "Green Ridge", by="Tom")
+    env.q.enqueue_show("SAM-3", "Green Ridge", by="Sam")
     assert process_one(env.q, env.tv, env.lib, env.s.thumbs_dir) is True
     assert [i for i in env.tv.list_art() if i.current][0].id == "SAM-3"
-    assert env.lib.get_mark().by == "Tom"
+    assert env.lib.get_mark().by == "Sam"
 
 
 def test_show_job_waits_while_tv_is_off(env):

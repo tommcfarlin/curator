@@ -131,7 +131,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
 <section id="add">
   <div class="card namecard" id="askname" hidden>
     <p><b>What is your name?</b><span>Curator shows it next to photos you choose.</span></p>
-    <form id="asknameform"><input class="text" id="asknamein" type="text" maxlength="30" placeholder="For example Tom" autocomplete="given-name" aria-label="Your name"><button class="btn primary" type="submit">Save</button></form>
+    <form id="asknameform"><input class="text" id="asknamein" type="text" maxlength="30" placeholder="For example Sam" autocomplete="given-name" aria-label="Your name"><button class="btn primary" type="submit">Save</button></form>
     <button class="link" id="asknameskip" type="button">Skip</button>
   </div>
   <div class="callout" id="homehint" role="note" hidden>
@@ -172,10 +172,6 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
     <div><p><b>The TV does not answer.</b></p><p>Turn the TV on with the remote. This is the last list Curator saw. Photos you send will go to the TV when it is on.</p></div>
   </div>
   <div class="empty" id="arterr" hidden></div>
-  <div id="wakebox" style="display:grid;gap:8px;margin:12px 0" hidden>
-    <button class="btn primary" id="wake">Turn on the TV</button>
-    <p class="note" id="wakenote" style="margin:0" hidden></p>
-  </div>
   <div id="lib">
     <div id="nowbox"><h2>Now showing</h2><div id="now"></div></div>
     <div id="minebox"><h2>Your photos</h2><div class="grid" id="gmine"></div><p class="nonote" id="nomine" hidden>Photos you add with Curator show up here.</p></div>
@@ -204,7 +200,7 @@ nav button{white-space:nowrap}nav svg{width:24px;height:24px;stroke:currentColor
     <ol class="steps"><li>Tap the menu button (three dots).</li><li>Tap “Add to Home screen”.</li><li>Tap “Add”.</li></ol>
   </div>
   <h2>Your name</h2>
-  <input class="text" id="myname" type="text" maxlength="30" placeholder="For example Tom" autocomplete="given-name" aria-label="Your name">
+  <input class="text" id="myname" type="text" maxlength="30" placeholder="For example Sam" autocomplete="given-name" aria-label="Your name">
   <p class="note">Curator shows your name next to the photo you choose for the TV. It is only a label. There is no login.</p>
   <h2>Appearance</h2>
   <div class="seg three" role="group" aria-label="Appearance" id="theme">
@@ -356,7 +352,7 @@ function tile(a,stale){const b=document.createElement('button');b.className='til
 function renderLib(){
   // TV off with an earlier list: keep it, grayed out. TV off with no list: only the message.
   const stale=!!artError&&art.length>0,none=!!artError&&!art.length;
-  $('#wakebox').hidden=!artError;$('#artoff').hidden=!stale;$('#arterr').hidden=!none;$('#arterr').textContent=none?artError:'';
+  $('#artoff').hidden=!stale;$('#arterr').hidden=!none;$('#arterr').textContent=none?artError:'';
   const lib=$('#lib');lib.hidden=none;$('#libnote').hidden=none;lib.classList.toggle('stale',stale);lib.setAttribute('aria-disabled',stale);
   if(stale&&$('#sheet').classList.contains('open'))closeSheet();
   const cur=art.find(a=>a.current),mine=art.filter(a=>a.kind==='mine'),other=art.filter(a=>a.kind==='other'),sam=art.filter(a=>a.kind==='samsung');
@@ -380,17 +376,6 @@ $('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
 $('#delno').onclick=()=>sheetMode(false);
 $('#show').onclick=async()=>{closeSheet();const r=await api(`/api/art/${encodeURIComponent(sel.id)}/show`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({by:myName,name:sel.name})});if(r.ok)watchJob(r.json.job);else toast(r.json.message||'Curator did not take the request.','bad');loadArt()};
 $('#del').onclick=()=>sheetMode(true);
-let wakeTimer=0;
-$('#wake').onclick=async()=>{
-  const b=$('#wake'),n=$('#wakenote');b.disabled=true;n.hidden=false;n.textContent='Sending…';
-  let r;try{r=await api('/api/tv/wake',{method:'POST'})}catch(e){r=null}
-  if(!r||!r.ok){n.textContent=(r&&r.json&&r.json.message)||'Curator could not send the request.';b.disabled=false;return}
-  if(r.json.already_on){n.textContent='The TV is already on.';b.disabled=false;loadStatus();loadArt();return}
-  n.textContent='Sent. The TV takes about 30 seconds to start.';
-  let tries=0;clearInterval(wakeTimer);
-  wakeTimer=setInterval(async()=>{tries++;await loadStatus();
-    if(tvOnline){clearInterval(wakeTimer);n.hidden=true;b.disabled=false;loadArt();return}
-    if(tries>=12){clearInterval(wakeTimer);b.disabled=false;n.textContent='The TV did not start. Press the power button on the remote.'}},4000)};
 $('#delyes').onclick=async()=>{closeSheet();await api(`/api/art/${encodeURIComponent(sel.id)}`,{method:'DELETE'});loadArt()};
 
 async function loadStatus(){try{const r=await api('/api/status');if(r.ok){jobs=r.json.jobs;tvOnline=r.json.tv_online;fake=r.json.fake;renderTv();renderJobs();reportWatched()}}catch(e){}}

@@ -102,13 +102,13 @@ def test_full_app_flow_with_real_client(sim, tmp_path):
     c = app.test_client()
     buf = io.BytesIO()
     Image.new("RGB", (800, 450), "blue").save(buf, "PNG")
-    r = c.post("/api/upload", data={"file": (io.BytesIO(buf.getvalue()), "Beach.png"), "show_now": "1", "by": "Tom"},
+    r = c.post("/api/upload", data={"file": (io.BytesIO(buf.getvalue()), "Beach.png"), "show_now": "1", "by": "Sam"},
                content_type="multipart/form-data")
     assert r.status_code == 201
     assert process_one(q, tv, lib, s.thumbs_dir) is True
     assert q.get(r.json["job"]).status == DONE
     art = {a["name"]: a for a in c.get("/api/art").json["art"]}
-    assert art["Beach"]["mine"] and art["Beach"]["current"] and art["Beach"]["chosen_by"] == "Tom"
+    assert art["Beach"]["mine"] and art["Beach"]["current"] and art["Beach"]["chosen_by"] == "Sam"
     cid = art["Beach"]["id"]
     assert c.get(f"/api/art/{cid}/thumb").status_code == 200
     assert c.delete(f"/api/art/{cid}").status_code == 200

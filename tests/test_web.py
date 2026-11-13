@@ -131,10 +131,10 @@ def test_upload_does_not_take_over_unless_asked(env):
     post(env)
     run_worker(env)
     assert current(env)["id"] == "SAM-1"
-    post(env, show_now="1", by="Tom")
+    post(env, show_now="1", by="Sam")
     run_worker(env)
     c = current(env)
-    assert c["mine"] and c["chosen_by"] == "Tom"
+    assert c["mine"] and c["chosen_by"] == "Sam"
 
 
 def test_show_for_missing_photo_ends_as_failed_job(env):
@@ -228,24 +228,3 @@ def test_tv_thumbnails_are_cached_on_disk(env):
     assert env.client.get("/api/art/SAM-1/thumb").status_code == 200  # from disk, TV not needed
     assert calls == ["SAM-1"]
     assert env.client.get("/api/art/..%2Fx/thumb").status_code in (404, 503)
-
-
-def test_turn_on_the_tv(env):
-    env.tv.online = False
-    r = env.client.post("/api/tv/wake")
-    assert r.status_code == 202 and r.json["sent"] is True
-    assert env.client.get("/api/status").json["tv_online"] is True
-    again = env.client.post("/api/tv/wake")
-    assert again.status_code == 200 and again.json["already_on"] is True
-
-
-def test_turn_on_explains_a_missing_address(env):
-    from curator.tv import NO_MAC, TVUnavailable
-
-    def no_mac():
-        raise TVUnavailable(NO_MAC)
-
-    env.tv.online = False
-    env.tv.wake = no_mac
-    r = env.client.post("/api/tv/wake")
-    assert r.status_code == 409 and r.json["error"] == "no_mac" and "once" in r.json["message"]

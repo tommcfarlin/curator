@@ -28,6 +28,9 @@ def main(argv=None) -> int:
         s = dataclasses.replace(s, data_dir=s.data_dir / "fake-tv")
         tv = FakeTV()
     else:
+        if not s.tv_host:
+            print("Curator does not know the TV address. Run: python -m curator.setup")
+            return 1
         tv = SamsungTV(s.tv_host, s.tv_port, s.token_file, s.tv_name,
                        mac=s.tv_mac, mac_file=s.data_dir / "tv-mac.txt")
     queue = RetryQueue(s.db_path)

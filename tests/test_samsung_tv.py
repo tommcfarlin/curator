@@ -135,39 +135,15 @@ def test_calls_are_serialized():
     assert seen == ["start", "end", "start", "end"]
 
 
-# -- turn on (Wake-on-LAN) ----------------------------------------------------
+# -- hardware address ----------------------------------------------------
 
-from curator.tv import NO_MAC, normalize_mac, send_magic_packet  # noqa: E402
+from curator.tv import normalize_mac  # noqa: E402
 
 
 def test_normalize_mac():
     assert normalize_mac("aa-bb-cc-dd-ee-ff") == "AA:BB:CC:DD:EE:FF"
     assert normalize_mac("aabbccddeeff") == "AA:BB:CC:DD:EE:FF"
     assert normalize_mac("not a mac") is None and normalize_mac("") is None
-
-
-def test_magic_packet_is_ff_then_mac_16_times():
-    rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    rx.bind(("127.0.0.1", 0))
-    rx.settimeout(2)
-    send_magic_packet("AA:BB:CC:DD:EE:FF", targets=("127.0.0.1",), ports=(rx.getsockname()[1],))
-    data, _ = rx.recvfrom(200)
-    rx.close()
-    assert data == b"\xff" * 6 + bytes.fromhex("AABBCCDDEEFF") * 16
-
-
-def test_wake_without_a_known_address_says_what_to_do(tmp_path):
-    tv = SamsungTV("192.168.1.20", mac_file=tmp_path / "mac.txt")
-    with pytest.raises(TVUnavailable) as e:
-        tv.wake()
-    assert str(e.value) == NO_MAC
-
-
-def test_wake_sends_to_broadcast_the_tv_and_the_subnet(tmp_path, monkeypatch):
-    sent = []
-    monkeypatch.setattr("curator.tv.send_magic_packet", lambda mac, targets: sent.append((mac, list(targets))))
-    SamsungTV("192.168.1.20", mac="aa:bb:cc:dd:ee:ff", mac_file=tmp_path / "m").wake()
-    assert sent == [("AA:BB:CC:DD:EE:FF", ["255.255.255.255", "192.168.1.20", "192.168.1.205"])]
 
 
 def test_curator_learns_the_address_while_the_tv_is_on_and_keeps_it(tmp_path):

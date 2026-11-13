@@ -5,10 +5,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
-Group=pi
-WorkingDirectory=/opt/curator
-ExecStart=/opt/curator/.venv/bin/python -m curator --config /opt/curator/config/local.toml
+# deploy/install.sh fills in @USER@ and @ROOT@.
+User=@USER@
+Group=@USER@
+WorkingDirectory=@ROOT@
+ExecStart=@ROOT@/.venv/bin/python -m curator --config @ROOT@/config/local.toml
 Environment=PYTHONUNBUFFERED=1
 Restart=on-failure
 RestartSec=10
@@ -18,7 +19,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/opt/curator/data /opt/curator/config
+ReadWritePaths=@ROOT@/data @ROOT@/config
 
 [Install]
 WantedBy=multi-user.target

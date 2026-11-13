@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 @dataclass(frozen=True)
 class Settings:
-    tv_host: str = "192.168.1.20"
+    tv_host: str = ""   # set by `python -m curator.setup`
     tv_port: int = 8002
     tv_name: str = "Curator"
     tv_mac: str = ""   # optional. Curator learns it while the TV is on.

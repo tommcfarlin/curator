@@ -98,14 +98,4 @@ Keep `config/token.txt`. The Pi needs the same token later, or the TV asks for A
 
 Notes from the first run (2026-11-09):
 
-- On the Mac, the Claude Code sandbox sends traffic through a proxy that refuses LAN addresses. The test commands ran outside the sandbox with `HTTP_PROXY` and `HTTPS_PROXY` unset. This does not apply to the Pi.
 - The test card is MY_F0026.
-
-## Turn on the TV from the app
-
-The "Turn on the TV" button in the On the TV tab sends a Wake-on-LAN packet (a network message that wakes a sleeping device). It needs two things.
-
-1. Curator must know the Wi-Fi hardware address of the TV. Curator asks the TV for it and saves it in `data/tv-mac.txt` the first time that the TV is on while Curator runs. You can also set `mac` in the `[tv]` section of `config/local.toml`.
-2. On the TV, open Settings > General > Network > Expert Settings and turn on "Power On with Mobile". The name can differ by firmware.
-
-If the TV is fully off, a 2021 Frame may ignore the packet. That is the open question for this feature. To test it, turn the TV on, wait one minute so that Curator can save the address, then turn the TV off with the remote and press the button in the app. Write down whether the TV starts after a short press of power (Art Mode off) and after a long press (fully off).

@@ -50,20 +50,6 @@ def normalize_mac(value: str) -> Optional[str]:
     return ":".join(digits[i:i + 2] for i in range(0, 12, 2)).upper()
 
 
-def send_magic_packet(mac: str, targets=("255.255.255.255",), ports=(9, 7)) -> None:
-    """Send a Wake-on-LAN packet (6 bytes of FF, then the hardware address 16 times)."""
-    raw = bytes.fromhex(re.sub(r"[^0-9a-f]", "", mac.lower()))
-    packet = b"\xff" * 6 + raw * 16
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        for target in targets:
-            for port in ports:
-                try:
-                    s.sendto(packet, (target, port))
-                except OSError:
-                    pass  # one bad route must not stop the others
-
-
 log = logging.getLogger("curator.tv")
 
 
@@ -86,12 +72,7 @@ def hosts_with_port(host: str, port: int, timeout: float = 0.7) -> list[str]:
     return [h for h, ok in zip(near, hits) if ok]
 
 
-NO_MAC = ("Curator does not know the hardware address of the TV yet. "
-          "Turn the TV on once with the remote. Curator learns the address then.")
-
-
 class TV(Protocol):
-    def wake(self) -> None: ...
     def is_available(self) -> bool: ...
     def list_art(self) -> list[ArtItem]: ...
     def upload(self, path: Path) -> str: ...
@@ -141,7 +122,6 @@ class SamsungTV:
     def _new_art(self):
         if self._art_factory:
             return self._art_factory()
-        from samsungtvws import SamsungTVWS  # noqa: F401  (checks the install)
         from samsungtvws.art import SamsungTVArt
 
         if self.token_file:
@@ -222,7 +202,7 @@ class SamsungTV:
                 return True
         return False
 
-    # -- turn on ------------------------------------------------------------
+    # -- hardware address (finds the TV after its address changes) ------------------------------------------------------------
 
     def known_mac(self) -> Optional[str]:
         if self.mac_setting:
@@ -251,16 +231,6 @@ class SamsungTV:
         if mac:
             self.mac_file.parent.mkdir(parents=True, exist_ok=True)
             self.mac_file.write_text(mac + "\n")
-
-    def wake(self) -> None:
-        """Send a Wake-on-LAN packet. The TV must be set to start from the network."""
-        mac = self.known_mac()
-        if not mac:
-            raise TVUnavailable(NO_MAC)
-        parts = self.host.split(".")
-        directed = ".".join(parts[:3] + ["255"]) if len(parts) == 4 else None
-        targets = ["255.255.255.255", self.host] + ([directed] if directed else [])
-        send_magic_packet(mac, targets)
 
     def list_art(self) -> list[ArtItem]:
         def go(art):
@@ -333,9 +303,6 @@ class FakeTV:
 
     def is_available(self) -> bool:
         return self.online
-
-    def wake(self) -> None:
-        self.online = True
 
     def list_art(self) -> list[ArtItem]:
         with self._lock:
